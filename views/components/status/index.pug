@@ -1,0 +1,8 @@
+include ../../controls/jsonator/index
+div.content
+    +jsonator({"System":status,
+               "Components":app,
+               "Mallocs":mallocs,
+               "Tasks":tasks},
+              undefined,
+              {"editable": false})

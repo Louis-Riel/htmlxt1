@@ -1,0 +1,76 @@
+mixin renderarray(data,caption,options)
+    - const columns=data.reduce((cols,cur)=>[...cols,...Object.keys(cur).filter(col=>!cols.includes(col))],[])
+    table#table(class='table caption-top table-sm table-striped table-bordered' data-toggle="table" data-sortable="true")
+        caption=caption
+        thead.table-light
+            tr
+                each column in columns
+                    th(scope="col" data-sortable="true")=column
+        tbody
+        each row,idx in data
+            tr
+                - var path = options.path + "[" + idx + "]";
+                each column in columns
+                    td
+                        +jsonator(row[column],undefined,{...options,path,expand:true,plaintext:true})
+
+mixin jsonator(data,caption,options)
+    - const uuid = ()=>([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,a=>(a^Math.random()*16>>a/4).toString(16))
+    - const isVersioned = (val)=>(typeof val === "object") && (val.value !== undefined) && (val.version !== undefined)
+    - const isObject = (val)=>(typeof val === "object") && (typeof val !== "string") && !isVersioned(val)
+    - const isArray = (val)=>Array.isArray(val) && (typeof val !== "string")
+    - const isValue = (val)=>!isArray(val) && !isObject(val)
+    - options = {...options,"path":options.path??""}
+    if isValue(data)
+        div.d-flex
+            - var id=uuid()
+            if caption
+                span(id class="input-group-text")=caption
+            input(type="text"
+                  style=options.expand ? 'width: 100%;' : 'width: auto;'
+                  readonly=!options.editable
+                  name=options.path
+                  class=options.plaintext ? "form-control-plaintext" : "form-control"
+                  aria-describedby=id
+                  value=isVersioned(data)?data.value:data)
+    else
+        div.card
+            div.card-body
+                if caption
+                    h5.card-title=caption
+                if text
+                    p.card-text=text
+                if isArray(data)
+                    +renderarray(data,undefined,options)
+                else
+                    - var stats = Object.entries(data).map(entry=>[...entry,uuid()])
+                    each stat,idx in stats
+                        if isValue(stat[1])
+                            +jsonator(stat[1],stat[0],{...options,"path":options.path+"/"+stat[0]})
+                    div.tabs
+                        if stats.find(stat=>isObject(stat[1]))
+                            ul(class="nav nav-tabs" role="tablist")
+                                - var firstPage = true
+                                each stat,idx in stats
+                                    if isObject(stat[1])
+                                        li.nav-item(role="presentation")
+                                            button(
+                                                class=`nav-link ${firstPage?"active":""}`
+                                                data-bs-toggle="tab" 
+                                                data-bs-target="#tab-content-"+stat[2]
+                                                type="button"
+                                                id="tab-"+stat[2]
+                                                aria-controls="tab-content-"+stat[2]
+                                                hx-target="#tab-content-"+stat[2]
+                                                role="tab")=stat[0]
+                                        - firstPage = false
+                            div(class="tab-content" role="tabpanel")
+                                - var firstPage = true
+                                each stat,idx in stats
+                                    if isObject(stat[1])
+                                        div(class=`tab-pane fade ${firstPage?"active show":""}` 
+                                            id="tab-content-"+stat[2] 
+                                            role="tabpanel" 
+                                            aria-labelledby="tab-"+stat[2])
+                                            +jsonator(stat[1],undefined,{...options,"path":options.path+"/"+stat[0]})
+                                        - firstPage = false

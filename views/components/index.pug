@@ -1,0 +1,28 @@
+doctype html
+html(lang='en' data-bs-theme='dark')
+  head
+    meta(charset="UTF-8")
+    meta(name="description" content="ESP32 on HTMX")
+    meta(name="viewport" content="width=device-width, initial-scale=1")
+    meta(http-equiv="Content-Security-Policy" content=`script-src ${serverUrl}`)
+    title htmlx test 1
+    script(src='dist/htmx.org/dist/htmx.js')
+    link(rel='stylesheet' href='dist/bootstrap/dist/css/bootstrap.min.css')
+    link(rel='stylesheet' href='main.css')
+  body
+    div#header(hx-get='/heading' hx-trigger="load")
+    ul(class="nav nav-tabs" role="tablist")
+      each page in ["files","status","config"]
+          li.nav-item(role="presentation")
+            button.nav-link(
+                hx-get=`chip/${page}/`
+                data-bs-toggle="tab"
+                type="button"
+                id="tab-"+page
+                aria-controls="tab-content"
+                hx-target="#tab-content"
+                role="tab"
+                aria-selected="true")=page
+    div#tab-content(class="tab-content" 
+                    role="tabpanel")
+    script(src='dist/bootstrap/dist/js/bootstrap.bundle.min.js')

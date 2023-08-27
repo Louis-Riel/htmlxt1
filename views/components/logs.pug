@@ -1,0 +1,10 @@
+table(class='table caption-top table-sm')
+    caption
+        button(hx-on:click="document.getElementById('logs').innerHTML=''" class="btn btn-outline-primary")="Clear"
+    thead.table-light
+        tr
+            th(scope="col")="Level"
+            th(scope="col")="Time"
+            th(scope="col")="Source"
+            th(scope="col")="Log"
+    tbody#logs

@@ -1,0 +1,6 @@
+{
+    "listenPost": 3000,
+    "serverAddress":"192.168.1.107",
+    "serverProtocol":"http",
+    "espAddress": "192.168.1.30"
+}

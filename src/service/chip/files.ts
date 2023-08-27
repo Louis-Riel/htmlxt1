@@ -1,6 +1,6 @@
 import { IncomingMessage, RequestOptions, ServerResponse, request } from "http";
 import * as pug from "pug";
-import { espAddress } from "../../config/config.json"
+import { host } from "../../config/downstream.json"
 import { EspFile } from '../../model/espfile';
 
 export default async function files(res: ServerResponse<IncomingMessage> & { req: IncomingMessage; }):Promise<pug.LocalsObject> {
@@ -8,7 +8,7 @@ export default async function files(res: ServerResponse<IncomingMessage> & { req
     return new Promise<pug.LocalsObject>((resolve,reject) => {
         try{
             const options:RequestOptions={
-                hostname: espAddress,
+                hostname: host,
                 path: `/${url}`,
                 method: "post",
                 protocol: "http:",
@@ -19,7 +19,7 @@ export default async function files(res: ServerResponse<IncomingMessage> & { req
                 res.on("data",chunk => data+=chunk.toString());
                 res.on("end",()=>res.statusCode === 200 ? 
                                 resolve(packageData(data)) :
-                                reject({statusCode:res.statusCode,statusMessage:res.statusMessage,error:data.toString()}))
+                                reject({statusCode:res.statusCode,statusMessage:res.statusMessage??"",error:data.toString()}))
                 res.on("error",(err:Error)=>reject({statusCode:res.statusCode,statusMessage:err.message,error:data.toString()}))
 
                 function packageData(data: string): pug.LocalsObject {
@@ -30,7 +30,7 @@ export default async function files(res: ServerResponse<IncomingMessage> & { req
                         Cookies: `folder=${url}`
                     };
                     return { url,
-                             espAddress,
+                             espAddress:host,
                              parentFolder,
                              headers: {
                                 "Set-Cookie": `espfolder=${url}`

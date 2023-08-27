@@ -6,8 +6,9 @@ import files from "../service/chip/files";
 import status from "../service/chip/status";
 import { TemplatedPage } from "../model/templatedpage";
 import config from "../service/chip/config";
-import * as siteConfig from "../config/config.json"
+import * as siteConfig from "../config/webServer.json"
 import getType from "../utils/getType";
+import { LocalsObject } from "pug";
 
 const server = http.createServer((req, res) => {
    switch (req.method) {
@@ -44,7 +45,7 @@ function Render(res: http.ServerResponse<http.IncomingMessage> & { req: http.Inc
       ret=TemplatePage("index.pug", Promise.resolve(siteConfig))
    } else if (res.req.url?.startsWith("/chip/")) {
       if (res.req.url?.substring(6).startsWith("files/")) {
-         ret=TemplatePage("/files/index.pug", files(res))
+         ret=TemplatePage("/files/index.pug", files(res),err=>new Promise<LocalsObject>((resolve,reject)=>err.statusMessage === "Internal Server Error" ? (resolve({resetPathCookie:true,err})) : reject(err)))
       } else if (res.req.url?.substring(6).startsWith("status/")) {
          ret=TemplatePage("/status/index.pug", status())
       } else if (res.req.url?.substring(6).startsWith("config/")) {
@@ -56,6 +57,8 @@ function Render(res: http.ServerResponse<http.IncomingMessage> & { req: http.Inc
       ret=serveFile(res.req.url.substring(6), "node_modules", res)
    } else if (res.req.url?.endsWith(".css")) {
       ret=serveFile(res.req.url, "css", res)
+   } else if (res.req.url?.endsWith(".js")) {
+      ret=serveFile(res.req.url, "js", res)
    } else {
       if (res.req.url?.lastIndexOf('/') === 0) {
          ret=TemplatePage(res.req.url?.substring(1) + ".pug", Promise.resolve(siteConfig))

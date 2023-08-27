@@ -1,44 +1,54 @@
-script. 
-    document.cookie='espfolder=!{url.substring(5)}; path=/;'
-table#files(class='table caption-top table-sm')
-    caption
-        - var path = "";
-        each folder,idx in url.substring(5).split("/")
-            - path+=`${idx===1?"":"/"}${folder}`
-            a(hx-get=`/chip/files${path}`,
+if resetPathCookie
+    script.
+        document.cookie='espfolder=/; path=/;'
+    div.container.error="💥Cannot fetch folder, resetting to root path, please refresh💥"
+else
+    script.
+        document.cookie='espfolder=!{url.substring(5)}; path=/;'
+    table#files(class='table caption-top table-sm')
+        caption
+            - var path = "";
+            a(hx-get=`/chip/files/`,
               href="#"
-              hx-headers='{"espfolder":"' + path + '"}'
-              hx-target="#files")=`/${folder}`
-    thead.table-light
-        tr
-            th(scope="col")="Name"
-            th(scope="col")="Size"
-    - var totalSize=0;
-    - var row=1;
-    tbody
-    if url !== "files/"
-        tr
-            td
-                a(hx-get=`/chip/${parentFolder}`.replace("//","/"),
+              hx-headers='{"espfolder":"/"}'
+              hx-target="#files")=`/`
+            each folder,idx in url.substring(5).split("/").filter(e=>e)
+                - path+=`${idx===1?"":"/"}${folder}`
+                a(hx-get=`/chip/files${path}`,
                   href="#"
-                  hx-headers='{"espfolder":"/' + parentFolder.substring(6) + '"}'
-                  hx-target="#files")=".."
-    each folder in folders
-        - var fname = `/${url.substring(6)}/${folder.name}`.replace("//","/")
-        tr
-            td
-                a(hx-get=`/chip/${url}/${folder.name}`.replace("//","/"),
-                  href="#"
-                  hx-headers='{"espfolder":"' + fname + '"}'
-                  hx-target="#files")=folder.name
-    each file in files
-        tr
-            td
-                a(href=`http://`+`${espAddress}/${url.substring(5)}/${file.name}`.replace("//","/"))=file.name
-            td
-                div.filesize=file.size
-        - totalSize+=file.size
-    tfoot.table-light
-        tr
-            th="Total"
-            th=totalSize
+                  style="padding-left: 5px;"
+                  hx-headers='{"espfolder":"' + path + '"}'
+                  hx-target="#files")=`/${folder}`
+        thead.table-light
+            tr
+                th(scope="col")="Name"
+                th(scope="col")="Size"
+        - var totalSize=0;
+        - var row=1;
+        tbody
+        if url !== "files/"
+            tr
+                td
+                    a(hx-get=`/chip/${parentFolder}`.replace("//","/"),
+                      href="#"
+                      hx-headers='{"espfolder":"/' + parentFolder.substring(6) + '"}'
+                      hx-target="#files")=".."
+        each folder in folders
+            - var fname = `/${url.substring(6)}/${folder.name}`.replace("//","/")
+            tr
+                td
+                    a(hx-get=`/chip/${url}/${folder.name}`.replace("//","/"),
+                    href="#"
+                    hx-headers='{"espfolder":"' + fname + '"}'
+                    hx-target="#files")=folder.name
+        each file in files
+            tr
+                td
+                    a(href=`http://`+`${espAddress}/${url.substring(5)}/${file.name}`.replace("//","/"))=file.name
+                td
+                    div.filesize=file.size
+            - totalSize+=file.size
+        tfoot.table-light
+            tr
+                th="Total"
+                th=totalSize

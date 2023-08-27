@@ -1,12 +1,12 @@
 import { RequestOptions, request } from "http";
 import * as pug from "pug";
-import { espAddress } from "../../config/config.json"
+import { host } from "../../config/downstream.json"
 
 export default async function config():Promise<pug.LocalsObject> {
     return new Promise((resolve,reject)=> {
             try{
                 const options:RequestOptions={
-                    hostname: espAddress,
+                    hostname: host,
                     path: "/config/",
                     method: "post",
                     protocol: "http:",

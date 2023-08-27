@@ -4,25 +4,30 @@ html(lang='en' data-bs-theme='dark')
     meta(charset="UTF-8")
     meta(name="description" content="ESP32 on HTMX")
     meta(name="viewport" content="width=device-width, initial-scale=1")
-    meta(http-equiv="Content-Security-Policy" content=`script-src ${serverUrl}`)
     title htmlx test 1
     script(src='dist/htmx.org/dist/htmx.js')
+    script(src='dist/htmx.org/dist/ext/ws.js')
     link(rel='stylesheet' href='dist/bootstrap/dist/css/bootstrap.min.css')
     link(rel='stylesheet' href='main.css')
-  body
+  body(hx-ext="ws" ws-connect=`ws://${serverAddress}:${listenPost}/ws`)
     div#header(hx-get='/heading' hx-trigger="load")
-    ul(class="nav nav-tabs" role="tablist")
-      each page in ["files","status","config"]
-          li.nav-item(role="presentation")
-            button.nav-link(
-                hx-get=`chip/${page}/`
-                data-bs-toggle="tab"
-                type="button"
-                id="tab-"+page
-                aria-controls="tab-content"
-                hx-target="#tab-content"
-                role="tab"
-                aria-selected="true")=page
-    div#tab-content(class="tab-content" 
-                    role="tabpanel")
+    - const pages = [{name:"files",url:"chip/files/",trigger:"intersect"},{name:"status",url:"chip/status/",trigger:"intersect"},{name:"config",url:"chip/config/",trigger:"intersect"},{name:"logs",url:"logs",trigger:"load"}]
+    ul(class="nav nav-pills" role="tablist")
+      each page in pages
+        li.nav-item(role="presentation")
+          button.nav-link(data-bs-toggle="tab"
+                          id=`${page.name}-tab`
+                          type="button"
+                          role="tab"
+                          aria-controls=`tab-content-${page.name}`
+                          data-bs-target=`#tab-content-${page.name}`)=page.name
+    div.tab-content
+      each page in pages
+        div(id=`tab-content-${page.name}`
+            class="tab-pane fade"
+            role="tabpanel"
+            aria-labelledby=`${page.name}-tab`
+            hx-get=page.url
+            hx-trigger=page.trigger)
     script(src='dist/bootstrap/dist/js/bootstrap.bundle.min.js')
+    script(src='main.js')

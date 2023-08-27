@@ -1,8 +1,10 @@
 import path from "path";
 import * as pug from "pug"; 
 import { TemplatedPage } from "../model/templatedpage";
-
-export default function TemplatePage(template:string,data:Promise<pug.LocalsObject>):Promise<TemplatedPage> {
+const test = (err:any):Promise<pug.LocalsObject>=>{
+    return new Promise<pug.LocalsObject>(()=>{});
+};
+export default function TemplatePage(template:string,data:Promise<pug.LocalsObject>,errorHandler:((err:any) => Promise<pug.LocalsObject>)|undefined = undefined):Promise<TemplatedPage> {
     const templates:Map<string,pug.compileTemplate> = new Map([]);
     return new Promise<TemplatedPage>((resolve,reject) => {
         try{
@@ -12,7 +14,15 @@ export default function TemplatePage(template:string,data:Promise<pug.LocalsObje
             const tmpl = templates.get(template);
             if (tmpl !== undefined) {
                 data.then(res=>resolve({page:tmpl(res),headers:res.headers}))
-                    .catch(reject);
+                    .catch(err => {
+                        if (errorHandler) {
+                            errorHandler(err)
+                                .then(res=>resolve({page:tmpl(res),headers:res.headers}))
+                                .catch(err=>reject(err))
+                        } else {
+                            reject(err);
+                        }
+                    });
             } else {
                 reject({error:"Cannot load",template})
             }

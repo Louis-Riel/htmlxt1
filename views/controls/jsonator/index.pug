@@ -35,7 +35,7 @@ mixin jsonator(data,caption,options)
                   value=isVersioned(data)?data.value:data)
     else
         div.card
-            div.card-body
+            div.card-body(path=options.path)
                 if caption
                     h5.card-title=caption
                 if text
@@ -64,7 +64,7 @@ mixin jsonator(data,caption,options)
                                                 hx-target="#tab-content-"+stat[2]
                                                 role="tab")=stat[0]
                                         - firstPage = false
-                            div(class="tab-content" role="tabpanel")
+                            div(class="tab-content" role="tabpanel" path=options.path)
                                 - var firstPage = true
                                 each stat,idx in stats
                                     if isObject(stat[1])

@@ -4,7 +4,7 @@ import WebSocketLink from '../../model/wssession';
 import { AddressInfo, Socket } from 'net';
 import TemplatePage from '../templatepage';
 import ServiceSession from './downstream'
-import { WsConfig } from '../../model/config/wsConfig';
+import { WsConfig } from '../../model/config/wsServer';
 
 export default function WSProxy(server:http.Server) {
     let timer:any;
@@ -14,11 +14,8 @@ export default function WSProxy(server:http.Server) {
     function WebSocketLink(request:IncomingMessage,socket: Socket, head: Buffer) {
         if (request.url === wsConfig.path) {
             if (clients.size < wsConfig.maxSessions) {
-                console.log(socket.remoteAddress,"Connecting");
-                ServiceSession()
-                    .then(GetLink())
-                    .then(link=>link.client.listener.handleUpgrade(request, socket, head, pipe(link)))
-                    .catch(err=>console.error("ServiceSession",err))
+                GetLink().then(link=>link.client.listener.handleUpgrade(request, socket, head, pipe(link)))
+                         .catch(err=>console.error("ServiceSession",err))
             } else {
                 console.error("No more sessions");
             }
@@ -26,6 +23,7 @@ export default function WSProxy(server:http.Server) {
             !timer && (timer=setInterval(()=>{
                 Array.from(clients.entries())
                      .filter(link=>link[1].client.connected)
+                     .filter(link=>link[1].client.lastts)
                      .filter(link=>((Date.now()-link[1].client.lastts) > wsConfig.timeout))
                      .forEach(link=>CloseLink({error:"Timeout",diff:Date.now()-link[1].client.lastts},link[1]))
             },wsConfig.timeout));
@@ -35,44 +33,49 @@ export default function WSProxy(server:http.Server) {
         }
 
         function CloseLink(err:any,link:WebSocketLink): void {
-            if (link.service && 
-                ((link.service.readyState === WebSocket.OPEN) || (link.service.readyState === WebSocket.CONNECTING))) {
-                link.service.close();
-                console.log("service connection closed")
-            }
-
             if ((link.client.socket.readyState === 'open') || (link.client.socket.readyState === 'opening')) {
-                console.log("client",(link.client.socket.address() as AddressInfo).address,"connection closed");
+                console.log("client",(link.client.socket.address() as AddressInfo).address,"connection closed",err);
                 link.client.socket.destroy();
             }
             link.client.connected=(link.client.socket.readyState === 'open') || (link.client.socket.readyState === 'opening');
             console.log("Now at",clients.size,"sessions",Array.from(clients.values()).filter(link=>link.client.connected).length,"connected");
+
+            if (!Array.from(clients.values()).filter(client=>client.client.connected).length &&
+                link.service && 
+                ((link.service.readyState === WebSocket.OPEN) || (link.service.readyState === WebSocket.CONNECTING))) {
+                link.service.close();
+                console.log("service connection closed",err)
+            }
         }
 
         function pipe(link: WebSocketLink): (client: WebSocket, request: http.IncomingMessage) => void {
+            console.log(socket.remoteAddress,"Connecting");
             return ws => {
                 clients.set(ws, link);
                 link.client.socket = socket;
+                link.client.ws = ws;
                 link.client.connected = true;
+                link.service.onmessage = (event) => Array.from(clients.values())
+                                                         .filter(({client}) => client.connected && client.ws)
+                                                         //.filter(()=>{console.log(event.type, event.data);return true;})
+                                                         .forEach(({client}) => pipeMessage(client.ws as WebSocket,event,true))
+
                 ws.onmessage = (event: WebSocket.MessageEvent) => pipeMessage(link.service, event, false);
-                link.service.onmessage = (event: WebSocket.MessageEvent) => Array.from(clients.values())
-                            .filter(link => link.client.connected)
-                            .forEach(link => pipeMessage(ws, event, true));
                 ws.onerror = err => CloseLink(err, link);
-                link.service.onerror = err => CloseLink(err, link);
                 console.log("Link established, now at",clients.size,"sessions",Array.from(clients.values()).filter(link=>link.client.connected).length,"connected");
-            };
+            }
         }
 
-        function GetLink(): ((value: WebSocket) => WebSocketLink) {
-            return service => {
-                const client = Array.from(clients).find(item=>!item[1].client.connected)
-                if (client?.[1]?.client?.listener) {
-                    const wsServer = client[1].client.listener;
-                    clients.delete(client[0]);
-                    return {
+        function GetLink(): Promise<WebSocketLink> {
+            return new Promise<WebSocketLink>((resolve,reject)=>{
+                ServiceSession(clients).then(service=>{
+                    const client = Array.from(clients).find(item=>!item[1].client.connected)
+                    const wsServer = client ? client[1]?.client?.listener : new WebSocketServer(wsConfig.webSocketServer);
+                    client && clients.delete(client[0]);
+                    resolve({
                         client: {
                             socket,
+                            ws: undefined,
                             sent: 0,
                             receive: 0,
                             infailed: 0,
@@ -81,22 +84,9 @@ export default function WSProxy(server:http.Server) {
                             connected: false,
                             listener: wsServer
                         }, service
-                    } as WebSocketLink;
-                } else {
-                    return {
-                        client: {
-                            socket,
-                            sent: 0,
-                            receive: 0,
-                            infailed: 0,
-                            outfailed: 0,
-                            lastts: 0,
-                            connected: false,
-                            listener: new WebSocketServer(wsConfig.webSocketServer)
-                        }, service
-                    } as WebSocketLink;
-                }
-            };
+                    });
+                }).catch(reject);
+            });
         }
 
         function pipeMessage(ws: WebSocket, event: WebSocket.MessageEvent, incomming: boolean): void {
@@ -111,9 +101,9 @@ export default function WSProxy(server:http.Server) {
                             incomming ? link.client.infailed++ : link.client.outfailed++;
                             console.error(err);
                         } else {
+                            link.client.lastts=Date.now();
                             const message = event.data.toString().trim();
                             incomming ? link.client.receive++ : link.client.sent++;
-                            link.client.lastts = Date.now();
                             if (incomming && message.length) {
                                 const log = /^(\u001b[^m]+m)?([^\u001b]*)(\u001b.*)?$/g.exec(message)?.[2];
                                 if (log) {
@@ -126,6 +116,7 @@ export default function WSProxy(server:http.Server) {
                                             logmsg: parts[5]
                                         })).then(page => ws.send(JSON.stringify({
                                             origin: "service",
+                                            id: "logs",
                                             type: "logline",
                                             ...page
                                         }), err => err && console.error(err))).catch(console.error);

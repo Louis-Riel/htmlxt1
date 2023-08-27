@@ -1,9 +1,6 @@
 import path from "path";
 import * as pug from "pug"; 
 import { TemplatedPage } from "../model/templatedpage";
-const test = (err:any):Promise<pug.LocalsObject>=>{
-    return new Promise<pug.LocalsObject>(()=>{});
-};
 export default function TemplatePage(template:string,data:Promise<pug.LocalsObject>,errorHandler:((err:any) => Promise<pug.LocalsObject>)|undefined = undefined):Promise<TemplatedPage> {
     const templates:Map<string,pug.compileTemplate> = new Map([]);
     return new Promise<TemplatedPage>((resolve,reject) => {

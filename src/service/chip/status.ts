@@ -2,7 +2,14 @@ import { RequestOptions, request } from "http";
 import * as pug from "pug";
 import { host } from "../../config/downstream.json"
 
+let lastValue:pug.LocalsObject;
+let lastTs=0;
+const cacheTime=1000;
 export default async function status():Promise<pug.LocalsObject> {
+    if (lastValue && ((Date.now()-lastTs)<cacheTime)) {
+        process.stdout.write(".");
+        return Promise.resolve(lastValue);
+    }
     return Promise.allSettled(["/status/","/status/app","/status/tasks","/status/mallocs","/status/repeating_tasks"].map(url =>
         new Promise((resolve,reject)=> {
             try{
@@ -15,6 +22,7 @@ export default async function status():Promise<pug.LocalsObject> {
                 };
                 request(options, res => {
                     let data = "";
+                    lastTs=Date.now();
                     res.on("data",chunk => data+=chunk.toString());
                     res.on("end",()=>res.statusCode === 200 ? resolve(packageData(data)) : reject({code:res.statusCode,message:res.statusMessage,error:data.toString()}))
                     res.on("error",reject)
@@ -26,8 +34,8 @@ export default async function status():Promise<pug.LocalsObject> {
             } catch(err) {
                 reject(err);
             }
-        }))).then(res=>res.filter(item=>item.status === "fulfilled")
-                          .reduce((pv,item:any)=>item.value.url === "/status/" ? 
-                                {...pv,status:item.value.status}:
-                                {...pv,[item.value.url.substring(8)]:item.value.status},{}))
+        }))).then(res=>lastValue=res.filter(item=>item.status === "fulfilled")
+                                    .reduce((pv,item:any)=>item.value.url === "/status/" ? 
+                                        {...pv,status:item.value.status}:
+                                        {...pv,[item.value.url.substring(8)]:item.value.status},{}))
     }

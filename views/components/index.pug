@@ -11,12 +11,17 @@ html(lang='en' data-bs-theme='dark')
     link(rel='stylesheet' href='main.css')
   body(hx-ext="ws" ws-connect=`ws://${serverAddress}:${listenPost}/ws`)
     div#header(hx-get='/heading' hx-trigger="load")
-    - const pages = [{name:"files",url:"chip/files/",trigger:"intersect"},{name:"status",url:"chip/status/",trigger:"intersect"},{name:"config",url:"chip/config/",trigger:"intersect"},{name:"logs",url:"logs",trigger:"load"}]
+      h1.display-6="Loading..."
+    - const pages = [{name:"files",url:"chip/files/",trigger:"click"},{name:"status",url:"chip/status/",trigger:"click"},{name:"config",url:"chip/config/",trigger:"click"},{name:"logs",url:"logs",trigger:"load"}]
     ul(class="nav nav-pills" role="tablist")
       each page in pages
         li.nav-item(role="presentation")
           button.nav-link(data-bs-toggle="tab"
                           id=`${page.name}-tab`
+                          hx-get=page.url
+                          hx-target=`#tab-content-${page.name}`
+                          hx-swap='innerHTML'
+                          hx-trigger=page.trigger
                           type="button"
                           role="tab"
                           aria-controls=`tab-content-${page.name}`
@@ -26,8 +31,6 @@ html(lang='en' data-bs-theme='dark')
         div(id=`tab-content-${page.name}`
             class="tab-pane fade"
             role="tabpanel"
-            aria-labelledby=`${page.name}-tab`
-            hx-get=page.url
-            hx-trigger=page.trigger)
+            aria-labelledby=`${page.name}-tab`)
     script(src='dist/bootstrap/dist/js/bootstrap.bundle.min.js')
     script(src='main.js')

@@ -1,7 +1,10 @@
 {
     "host": "192.168.1.30",
     "ws": {
-        "port": "80",
+        "port": 80,
         "path": "ws"
+    },
+    "webSocketServer":{
+
     }
 }

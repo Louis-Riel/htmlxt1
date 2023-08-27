@@ -1,6 +1,3 @@
-htmx.on('htmx:wsOpen', function({detail}) {
-    detail.socketWrapper.send("Connected","body")
-});
 htmx.on('htmx:wsAfterMessage', function({detail}) {
     if (detail.message.trim()){
         try {
@@ -14,10 +11,4 @@ htmx.on('htmx:wsAfterMessage', function({detail}) {
 
         }
     }
-});
-htmx.on('htmx:wsClose', function(evt) {
-    console.log("wsClose",evt)
-});
-htmx.on('htmx:wsError', function(evt) {
-    console.log("wsError",evt)
 });

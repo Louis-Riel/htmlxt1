@@ -1,5 +1,6 @@
 import { Socket } from 'net';
 import WebSocket, { WebSocketServer } from 'ws';
+import { Downstream } from './config/downstream';
 
 export interface ClientSession {
     listener: WebSocketServer;
@@ -14,5 +15,5 @@ export interface ClientSession {
 
 export default interface WebSocketLink {
     service:WebSocket,
-    client: ClientSession
+    client:ClientSession
 }

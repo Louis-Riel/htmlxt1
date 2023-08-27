@@ -1,7 +1,7 @@
 import WebSocket from 'ws';
+import { Downstream } from '../../model/config/downstream';
 
-import * as downstream from '../../config/downstream.json'
-
+const downstream:Downstream = require('../../config/downstream.json')
 export default function ServiceSession():Promise<WebSocket> {
     const url = `ws://${downstream.host}:${downstream.ws.port}/${downstream.ws.path}`;
     console.log("Connecting to esp at",url);

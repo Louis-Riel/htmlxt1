@@ -1,1 +1,4 @@
-H3=`${espAddress}:${listenPost}`
+div.d-flex
+    h1.display-6=`${espAddress}:${listenPost}`
+    if (espAddress !== app.wifi.station.Ip)
+        figcaption=`${app.wifi.station.Ip}(${app.wifi.station.Gw})`

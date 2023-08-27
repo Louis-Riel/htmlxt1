@@ -2,7 +2,7 @@
     "path": "/ws",
     "maxSessions": 50,
     "timeout": 3000,
-    "WebSocketServer": {
+    "webSocketServer": {
         "noServer": true,
         "perMessageDeflate": {
             "zlibDeflateOptions": {

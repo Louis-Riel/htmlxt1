@@ -1,15 +1,14 @@
-import WebSocket, { MessageEvent, WebSocketServer } from 'ws';
-import http from 'http';
-import WebSocketLink, { ClientSession } from '../../model/wssession';
-import { IncomingMessage } from 'http';
-import { Socket } from 'net';
+import WebSocket, { WebSocketServer } from 'ws';
+import http, { IncomingMessage } from 'http';
+import WebSocketLink from '../../model/wssession';
+import { AddressInfo, Socket } from 'net';
 import TemplatePage from '../templatepage';
 import ServiceSession from './downstream'
-
-import * as wsConfig from '../../config/wsServer.json'
+import { WsConfig } from '../../model/config/wsConfig';
 
 export default function WSProxy(server:http.Server) {
-    var timer:any;
+    let timer:any;
+    const wsConfig:WsConfig = require('../../config/wsServer.json')
     const clients:Map<WebSocket,WebSocketLink> = new Map<WebSocket,WebSocketLink>();
     console.log("Web Socket Running");
     function WebSocketLink(request:IncomingMessage,socket: Socket, head: Buffer) {
@@ -43,8 +42,8 @@ export default function WSProxy(server:http.Server) {
             }
 
             if ((link.client.socket.readyState === 'open') || (link.client.socket.readyState === 'opening')) {
+                console.log("client",(link.client.socket.address() as AddressInfo).address,"connection closed");
                 link.client.socket.destroy();
-                console.log("client",link.client.socket.address().toString(),"connection closed");
             }
             link.client.connected=(link.client.socket.readyState === 'open') || (link.client.socket.readyState === 'opening');
             console.log("Now at",clients.size,"sessions",Array.from(clients.values()).filter(link=>link.client.connected).length,"connected");
@@ -68,7 +67,7 @@ export default function WSProxy(server:http.Server) {
         function GetLink(): ((value: WebSocket) => WebSocketLink) {
             return service => {
                 const client = Array.from(clients).find(item=>!item[1].client.connected)
-                if (client && client[1].client.listener) {
+                if (client?.[1]?.client?.listener) {
                     const wsServer = client[1].client.listener;
                     clients.delete(client[0]);
                     return {
@@ -93,7 +92,7 @@ export default function WSProxy(server:http.Server) {
                             outfailed: 0,
                             lastts: 0,
                             connected: false,
-                            listener: new WebSocketServer(wsConfig.WebSocketServer)
+                            listener: new WebSocketServer(wsConfig.webSocketServer)
                         }, service
                     } as WebSocketLink;
                 }
@@ -101,7 +100,8 @@ export default function WSProxy(server:http.Server) {
         }
 
         function pipeMessage(ws: WebSocket, event: WebSocket.MessageEvent, incomming: boolean): void {
-            ws.send(event.data, processMessage());
+            if (ws.readyState === WebSocket.OPEN)
+                ws.send(event.data, processMessage());
 
             function processMessage(): ((err?: Error | undefined) => void) {
                 return err => {
@@ -109,9 +109,10 @@ export default function WSProxy(server:http.Server) {
                     if (link) {
                         if (err) {
                             incomming ? link.client.infailed++ : link.client.outfailed++;
+                            console.error(err);
                         } else {
                             const message = event.data.toString().trim();
-                            incomming ? link.client.receive++ : link.client.sent;
+                            incomming ? link.client.receive++ : link.client.sent++;
                             link.client.lastts = Date.now();
                             if (incomming && message.length) {
                                 const log = /^(\u001b[^m]+m)?([^\u001b]*)(\u001b.*)?$/g.exec(message)?.[2];
@@ -127,7 +128,7 @@ export default function WSProxy(server:http.Server) {
                                             origin: "service",
                                             type: "logline",
                                             ...page
-                                        }), err && console.error(err))).catch(console.error);
+                                        }), err => err && console.error(err))).catch(console.error);
                                     }
                                 }
                             }

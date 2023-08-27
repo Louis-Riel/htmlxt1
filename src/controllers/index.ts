@@ -40,19 +40,13 @@ function get(res: http.ServerResponse<http.IncomingMessage> & { req: http.Incomi
 }
 
 function Render(res: http.ServerResponse<http.IncomingMessage> & { req: http.IncomingMessage; }):Promise<TemplatedPage> {
-   var ret:Promise<TemplatedPage>;
+   let ret:Promise<TemplatedPage>;
    if (res.req.url === "/") {
       ret=TemplatePage("index.pug", Promise.resolve(siteConfig))
+   } else if (res.req.url === "/heading") {
+      ret=TemplatePage("heading.pug", status().then(status=>{return{...status,...siteConfig}}))
    } else if (res.req.url?.startsWith("/chip/")) {
-      if (res.req.url?.substring(6).startsWith("files/")) {
-         ret=TemplatePage("/files/index.pug", files(res),err=>new Promise<LocalsObject>((resolve,reject)=>err.statusMessage === "Internal Server Error" ? (resolve({resetPathCookie:true,err})) : reject(err)))
-      } else if (res.req.url?.substring(6).startsWith("status/")) {
-         ret=TemplatePage("/status/index.pug", status())
-      } else if (res.req.url?.substring(6).startsWith("config/")) {
-         ret=TemplatePage("/config/index.pug", config())
-      } else {
-         ret=Promise.reject({ statusCode: 404, statusMessage: `missing service path ${res.req.url}` });
-      }
+      ret=ChipRequest();
    } else if (res.req.url?.startsWith("/dist/")) {
       ret=serveFile(res.req.url.substring(6), "node_modules", res)
    } else if (res.req.url?.endsWith(".css")) {
@@ -67,6 +61,18 @@ function Render(res: http.ServerResponse<http.IncomingMessage> & { req: http.Inc
       }
    }
    return ret;
+
+   function ChipRequest():Promise<TemplatedPage> {
+      if (res.req.url?.substring(6).startsWith("files/")) {
+         return TemplatePage("/files/index.pug", files(res), err => new Promise<LocalsObject>((resolve, reject) => err.statusMessage === "Internal Server Error" ? (resolve({ resetPathCookie: true, err })) : reject(err)));
+      } else if (res.req.url?.substring(6).startsWith("status/")) {
+         return TemplatePage("/status/index.pug", status());
+      } else if (res.req.url?.substring(6).startsWith("config/")) {
+         return TemplatePage("/config/index.pug", config());
+      } else {
+         return Promise.reject({ statusCode: 404, statusMessage: `missing service path ${res.req.url}` });
+      }
+   }
 }
 
 function serveFile(url:string, folder:string, res: http.ServerResponse<http.IncomingMessage> & { req: http.IncomingMessage; }):Promise<TemplatedPage> {

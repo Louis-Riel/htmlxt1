@@ -10,7 +10,6 @@ htmx.on('htmx:wsAfterMessage', function({detail}) {
                 logs.firstElementChild ? 
                     logs.firstElementChild.before(row):
                     logs.appendChild(row);
-                logs.firstElementChild.bef = [row,...logs.childNodes];
             } else if (json.eventBase && json.eventId && json.data?.name) {
                 Object.entries(json.data)
                       .filter(ent=>!["class","commands","name"].includes(ent[0]))

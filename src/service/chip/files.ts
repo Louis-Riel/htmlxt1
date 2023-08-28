@@ -2,8 +2,9 @@ import { IncomingMessage, RequestOptions, ServerResponse, request } from "http";
 import * as pug from "pug";
 import { host } from "../../config/downstream.json"
 import { EspFile } from '../../model/espfile';
+import { Request } from "../../model/urlmapping";
 
-export default async function files(res: ServerResponse<IncomingMessage> & { req: IncomingMessage; }):Promise<pug.LocalsObject> {
+export default async function files(res: Request):Promise<pug.LocalsObject> {
     const url = getFolder();
     return new Promise<pug.LocalsObject>((resolve,reject) => {
         try{

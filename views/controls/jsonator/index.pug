@@ -1,7 +1,6 @@
 mixin renderarray(data,caption,options)
     - const columns=data.reduce((cols,cur)=>[...cols,...Object.keys(cur).filter(col=>!cols.includes(col))],[])
     table#table(class='table caption-top table-sm table-striped table-bordered' data-toggle="table" data-sortable="true")
-        caption=caption
         thead.table-light
             tr
                 each column in columns

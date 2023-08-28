@@ -80,7 +80,7 @@ export default function WSProxy(server:http.Server) {
                             receive: 0,
                             infailed: 0,
                             outfailed: 0,
-                            lastts: 0,
+                            lastts: Date.now(),
                             connected: false,
                             listener: wsServer
                         }, service

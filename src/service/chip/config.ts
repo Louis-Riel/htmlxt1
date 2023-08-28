@@ -1,12 +1,11 @@
 import { RequestOptions, request } from "http";
 import * as pug from "pug";
-import { host } from "../../config/downstream.json"
+import { host,requestRateLimit } from "../../config/downstream.json"
 
 let lastValue:pug.LocalsObject;
 let lastTs=0;
-const cacheTime=1000;
 export default async function config():Promise<pug.LocalsObject> {
-    if (lastValue && ((Date.now()-lastTs)<cacheTime)) {
+    if (lastValue && ((Date.now()-lastTs)<requestRateLimit)) {
         process.stdout.write(".");
         return Promise.resolve(lastValue);
     }

@@ -9,7 +9,7 @@ html(lang='en' data-bs-theme='dark')
     script(src='dist/htmx.org/dist/ext/ws.js')
     link(rel='stylesheet' href='dist/bootstrap/dist/css/bootstrap.min.css')
     link(rel='stylesheet' href='main.css')
-  body(hx-ext="ws" ws-connect=`ws://${serverAddress}:${listenPost}/ws`)
+  body
     div#header(hx-get='/heading' hx-trigger="load")
       h1.display-6="Loading..."
     - const pages = [{name:"files",url:"chip/files/",trigger:"click"},{name:"status",url:"chip/status/",trigger:"click"},{name:"config",url:"chip/config/",trigger:"click"},{name:"logs",url:"logs",trigger:"load"}]
@@ -26,7 +26,7 @@ html(lang='en' data-bs-theme='dark')
                           role="tab"
                           aria-controls=`tab-content-${page.name}`
                           data-bs-target=`#tab-content-${page.name}`)=page.name
-    div.tab-content
+    div.tab-content(hx-ext="ws" ws-connect=`ws://${serverAddress}:${listenPost}/ws`)
       each page in pages
         div(id=`tab-content-${page.name}`
             class="tab-pane fade"

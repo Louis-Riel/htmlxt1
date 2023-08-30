@@ -5,6 +5,7 @@ import { AddressInfo, Socket } from 'net';
 import TemplatePage from '../templatepage';
 import ServiceSession from './downstream'
 import { WsConfig } from '../../model/config/wsServer';
+import { LocalsObject } from 'pug';
 
 export default function WSProxy(server:http.Server) {
     let timer:any;
@@ -13,7 +14,7 @@ export default function WSProxy(server:http.Server) {
     console.log("Web Socket Running");
     function WebSocketLink(request:IncomingMessage,socket: Socket, head: Buffer) {
         if (request.url === wsConfig.path) {
-            if (clients.size < wsConfig.maxSessions) {
+            if (Array.from(clients.values()).filter(client=>client.client.connected).length < wsConfig.maxSessions) {
                 GetLink().then(link=>link.client.listener.handleUpgrade(request, socket, head, pipe(link)))
                          .catch(err=>console.error("ServiceSession",err))
             } else {
@@ -90,8 +91,56 @@ export default function WSProxy(server:http.Server) {
         }
 
         function pipeMessage(ws: WebSocket, event: WebSocket.MessageEvent, incomming: boolean): void {
-            if (ws.readyState === WebSocket.OPEN)
-                ws.send(event.data, processMessage());
+            if (ws.readyState === WebSocket.OPEN){
+                const unparsed = event.data.toString();
+                if (unparsed.length){
+                    console.log(unparsed)
+                    if ("[{".includes(unparsed[0])) {
+                        let msg:LocalsObject = {};
+                        try {
+                            msg = JSON.parse(unparsed);
+                            if (msg.HEADERS["HX-Trigger-Name"] === "Config") {
+                                console.log(JSON.stringify(formToObject(msg)))
+                            }
+                        } catch(err) {
+                            console.error(err);
+                        }
+                    }
+                }
+                incomming && ws.send(event.data, processMessage());
+            }
+
+            function setObectValue(obj:LocalsObject,matches:string[],value:any):LocalsObject {
+                const idx = matches[3] === undefined ? -1 : parseInt(matches[3]);
+                if (matches[0]&&matches[1]) {
+                    obj[matches[1]] = (obj[matches[1]] === undefined ? (obj[matches[1]]=(matches[3]===undefined ? {} : [])) :
+                                                                        obj[matches[1]]);
+                    if ((idx !== -1) && (obj[matches[1]][idx] === undefined)) {
+                        obj[matches[1]][idx] = {};
+                    }
+                    if (matches[5]) {
+                        const childObj = matches[3] === undefined ? obj[matches[1]] : obj[matches[1]][idx];
+                        setObectValue(childObj,matches.splice(4),value);
+                    } else {
+                        const val = matches[matches.length-1] === undefined ? value : {value,version:parseInt(matches[3]??"0")}
+                        if (matches[3] === undefined) {
+                            obj[matches[1]] = val
+                        } else {
+                            obj[matches[1]][idx] = val
+                        }
+                    }
+                }
+                return obj;
+            }
+
+            function formToObject(msg:LocalsObject): LocalsObject {
+                return Object.entries(msg)
+                             .filter(change=>change[0].startsWith("/"))
+                             .map(change=>[/^(\/([a-zA-Z]+)(\[([0-9]+)\])?)?(\/([a-zA-Z]+)(\[([0-9]+)\])?)?(\/([a-zA-Z]+)(\[([0-9]+)\])?)?(\/([a-zA-Z]+)(\[([0-9]+)\])?)?(\/([a-zA-Z]+)(\[([0-9]+)\])?)?(\/([a-zA-Z]+)(\[([0-9]+)\])?)?(\/([a-zA-Z]+)(\[([0-9]+)\])?)?(\/([a-zA-Z]+)(\[([0-9]+)\])?)?(\/([a-zA-Z]+)(\[([0-9]+)\])?)?(\/([a-zA-Z]+)(\[([0-9]+)\])?)?(\/([a-zA-Z]+)(\[([0-9]+)\])?)?(\/([a-zA-Z]+)(\[([0-9]+)\])?)?(\/([a-zA-Z]+)(\[([0-9]+)\])?)?(\([0-9]*\))?/g.exec(change[0])?.splice(1),change[1]])
+                             .reduce((translaed,change)=>{
+                                return setObectValue(translaed,change[0],change[1]);
+                             },{} as LocalsObject)
+            }
 
             function processMessage(): ((err?: Error | undefined) => void) {
                 return err => {

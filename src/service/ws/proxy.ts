@@ -4,7 +4,7 @@ import WebSocketLink from '../../model/wssession';
 import { AddressInfo, Socket } from 'net';
 import TemplatePage from '../templatepage';
 import ServiceSession from './downstream'
-import { WsConfig } from '../../model/config/wsServer';
+import { WsConfig } from '../../model/config/wsConfig';
 import { LocalsObject } from 'pug';
 
 export default function WSProxy(server:http.Server) {
@@ -94,12 +94,10 @@ export default function WSProxy(server:http.Server) {
             if (ws.readyState === WebSocket.OPEN){
                 const unparsed = event.data.toString();
                 if (unparsed.length){
-                    console.log(unparsed)
                     if ("[{".includes(unparsed[0])) {
-                        let msg:LocalsObject = {};
                         try {
-                            msg = JSON.parse(unparsed);
-                            if (msg.HEADERS["HX-Trigger-Name"] === "Config") {
+                            let msg = JSON.parse(unparsed);
+                            if (msg.HEADERS?.["HX-Trigger-Name"] === "Config") {
                                 console.log(JSON.stringify(formToObject(msg)))
                             }
                         } catch(err) {

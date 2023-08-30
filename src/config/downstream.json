@@ -1,5 +1,11 @@
 {
     "host": "192.168.1.30",
+    "port": 80,
+    "protocol": "http:",
+    "paths": {
+        "config": "/config/",
+        "status": "/status/"
+    },
     "ws": {
         "port": 80,
         "path": "ws"

@@ -5,7 +5,7 @@ import path from "path";
 import files from "../service/chip/files";
 import status from "../service/chip/status";
 import { TemplatedPage } from "../model/templatedpage";
-import config from "../service/chip/config";
+import getConfig from "../service/chip/config";
 import * as siteConfig from "../config/webServer.json"
 import getType from "../utils/getType";
 import { LocalsObject } from "pug";
@@ -24,8 +24,8 @@ const mappings:UrlMapping[] = [
                reject(err))
    },
    {equals:"/chip/status/",template:()=>"/status/index.pug",datas:[()=>Promise.resolve(siteConfig),()=>status()]},
-   {equals:"/chip/config/",template:()=>"/config/index.pug",datas:[()=>Promise.resolve(siteConfig),()=>config()]},
-   {startsWith:"/dist",renderer:GetFileServer((res)=>(res.req.url as string).substring(6), "node_modules"),datas:[]},
+   {equals:"/chip/config/",template:()=>"/config/index.pug",datas:[()=>Promise.resolve(siteConfig),()=>getConfig()]},
+   {startsWith:"/dist",renderer:GetFileServer((res)=>res.req.url?.substring(6)??"", "node_modules"),datas:[]},
    {endsWith:".css",renderer:GetFileServer((res)=>res.req.url as string, "css"),datas:[]},
    {endsWith:".js",renderer:GetFileServer((res)=>res.req.url as string, "js"),datas:[]},
    {lastIndexIsZero:"/",template:(res)=>res.req.url?.substring(1) + ".pug",datas:[()=>Promise.resolve(siteConfig)]},

@@ -147,6 +147,6 @@ export default function getType(url:string):string{
         case '.7z':
             return 'application/x-7z-compressed';
         default:
-            return "application/octet-stream";
+            return "text/html";
     }
 }

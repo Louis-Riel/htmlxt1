@@ -40,7 +40,7 @@ mixin jsonator(data,caption,options)
         div.container-fluid(style="padding-top: 5px;")
             each stat,idx in stats.filter(stat=>isValue(stat[1]))
                 +jsonator(stat,stat[0],{...options,"path":options.path+"/"+stat[0]})
-            div.tabs
+            div.tabs(style="padding-top: 5px;")
                 ul(class="nav nav-tabs" role="tablist")
                     each stat,idx in stats.filter(stat=>isObject(stat[1]))
                         li.nav-item(role="presentation")

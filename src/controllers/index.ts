@@ -2,18 +2,17 @@ import http from "http";
 import TemplatePage from "../service/templatepage";
 import { readFile, stat } from "fs";
 import path from "path";
-import files from "../service/chip/files";
-import status from "../service/chip/status";
 import { TemplatedPage } from "../model/templatedpage";
-import getConfig from "../service/chip/config";
 import * as siteConfig from "../config/webServer.json"
-import getType from "../utils/getType";
+import getType from '../utils/getType';
 import { LocalsObject } from "pug";
 import { Request, UrlMapping } from "../model/urlmapping";
+import { deflate,gzip  } from "node:zlib";
+import { files, getConfig, getStatuses, getStatus } from "../service/chip";
 
 const mappings:UrlMapping[] = [
    {equals: "/",template:()=>"index.pug",datas: [()=>Promise.resolve(siteConfig)]},
-   {equals: "/heading",template:()=>"heading.pug", datas: [()=>Promise.resolve(siteConfig),()=>status()]},
+   {equals: "/heading",template:()=>"heading.pug", datas: [()=>Promise.resolve(siteConfig),getStatuses]},
    {
       startsWith: "/chip/files/",
       template:()=>"/files/index.pug",
@@ -23,8 +22,9 @@ const mappings:UrlMapping[] = [
                (resolve({ resetPathCookie: true, err })) : 
                reject(err))
    },
-   {equals:"/chip/status/",template:()=>"/status/index.pug",datas:[()=>Promise.resolve(siteConfig),()=>status()]},
-   {equals:"/chip/config/",template:()=>"/config/index.pug",datas:[()=>Promise.resolve(siteConfig),()=>getConfig()]},
+   {equals:"/chip/status/",template:()=>"/status/index.pug",datas:[()=>Promise.resolve(siteConfig),getStatuses]},
+   {startsWith:"/chip/status/",template:()=>"/status/index.pug",datas:[()=>Promise.resolve(siteConfig),getStatus]},
+   {equals:"/chip/config/",template:()=>"/config/index.pug",datas:[()=>Promise.resolve(siteConfig),getConfig]},
    {startsWith:"/dist",renderer:GetFileServer((res)=>res.req.url?.substring(6)??"", "node_modules"),datas:[]},
    {endsWith:".css",renderer:GetFileServer((res)=>res.req.url as string, "css"),datas:[]},
    {endsWith:".js",renderer:GetFileServer((res)=>res.req.url as string, "js"),datas:[]},
@@ -38,10 +38,7 @@ function GetFileServer(name:(req:Request)=>string,folder:string): (res: Request)
 const server = http.createServer((req, res) => {
    switch (req.method) {
       case "GET":
-         get(res).catch(err=>{
-                     res.statusCode = 500;
-                     res.end(JSON.stringify(err));
-                  });
+         get(res);
          break;
       default:
          res.statusCode = 500;
@@ -51,20 +48,50 @@ const server = http.createServer((req, res) => {
 
 
 function get(res: Request) {
-   console.log("GET", res.req.url);
-   return Render(res).then(page => {
-      res.writeHead(200,page.headers);
-      res.end(page.page);
-   }).catch(err=>{
+   return Render(res).then(ManageContentType)
+                     .then(page => new Promise((resolve,reject)=>res.write(page.page,err=>err?reject(err):resolve(page))))
+                     .then(()=>res.end())
+                     .catch(RenderError)
+
+   function RenderError(err: any) {
       res.statusCode = err.statusCode ?? 500;
       res.statusMessage = res.statusCode === 404 ? "Not found" : "Server Error";
-      res.statusCode === 404 ?  console.warn("GET", res.req.url) : console.error("GET", res.req.url);
-      res.writeHead(res.statusCode,["Content-Type",getType("error.json")]);
+      res.statusCode === 404 ? console.warn(res.req.method, res.req.url) : console.error(res.req.method, res.req.url);
+      res.writeHead(res.statusCode, ["Content-Type", getType("error.json")]);
       res.end(JSON.stringify({
          statusCode: res.statusCode,
          statusMessage: err.message ?? res.statusMessage
       }));
-   })
+   }
+
+   function ManageContentType(page:TemplatedPage):Promise<TemplatedPage>{
+      return new Promise((resolve,reject) => {
+         const enc = res.req.headers["Accept-Encoding"];
+         const encs = typeof enc === 'string' ? [enc] : enc ?? [];
+         if (encs.some(enc=>enc.match(/\bdeflate\b/))) {
+            deflate(page.page, (err, buffer) => {
+               if (err) {
+                  reject(err);
+               } else {
+                  res.setHeader('Content-Encoding', 'deflate');
+                  resolve({page:buffer,headers:page.headers});
+               }
+            })
+         } else if (encs.some(enc=>enc.match(/\bgzip\b/))) {
+               res.writeHead(200, { 'Content-Encoding': 'gzip', 'Content-Type': getType(res.req.url ?? "type.json") });
+               gzip(page.page, function(err, buffer){
+                  if(!err){
+                     reject(err);
+                  } else {
+                     res.setHeader('Content-Encoding', 'deflate');
+                     resolve({page:buffer,headers:page.headers});
+                  }
+               });
+         } else {
+            resolve(page);
+         }
+      });
+   }
 }
 
 function Render(res: Request):Promise<TemplatedPage> {
@@ -77,8 +104,12 @@ function Render(res: Request):Promise<TemplatedPage> {
    const mapping = matches[0];
    const data = mapping.datas.reduce((pv,cv)=>pv.then(ret=>cv(res).then(res=>Object.assign(ret,res))),
                                         Promise.resolve({} as LocalsObject))
-   return mapping.renderer ? mapping.renderer(res) :
-                             TemplatePage(mapping.template?mapping.template(res):"notthere",data,mapping.errorHandler)
+   return (mapping.renderer ? mapping.renderer(res) :
+                             TemplatePage(mapping.template?mapping.template(res):"notthere",data,mapping.errorHandler))
+                                 .then(page=>{
+                                    res.setHeader('Content-Type', getType(res.req.url ?? "type.json"));
+                                    return page;
+                                 })
 
    function UrlMatches(mapping:UrlMapping): boolean {
       const url = res.req.url as string;

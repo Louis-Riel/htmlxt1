@@ -1,6 +1,6 @@
 import { OutgoingHttpHeader } from "http";
 
 export interface TemplatedPage {
-    page: string,
+    page: string|Buffer,
     headers?: OutgoingHttpHeader[]
 }

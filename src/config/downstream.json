@@ -4,13 +4,13 @@
     "protocol": "http:",
     "paths": {
         "config": "/config/",
-        "statuses": [
-            "/status/",
-            "/status/app",
-            "/status/tasks",
-            "/status/mallocs",
-            "/status/repeating_tasks"
-        ]
+        "statuses": {
+            "System":"/status/",
+            "Components":"/status/app",
+            "Tasks":"/status/tasks",
+            "Mallocs":"/status/mallocs",
+            "Repeating Tasks":"/status/repeating_tasks"
+        }
     },
     "ws": {
         "port": 80,

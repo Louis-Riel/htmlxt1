@@ -1,9 +1,2 @@
 include ../../controls/jsonator/index
-+jsonator(["Status",
-          {"System":status,
-           "Components":app,
-           "Mallocs":mallocs,
-           "Tasks":tasks},
-           "Status",
-          {"editable": false,
-           "path":"/status"}])
++jsonator(["Status",data],"Status",{"editable": true,"path":"/status", "expand": true})

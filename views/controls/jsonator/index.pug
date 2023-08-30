@@ -32,43 +32,31 @@ mixin jsonator(data,caption,options)
                   name=options.path + (versioned?`(${data[1].version})`:"")
                   class=options.plaintext ? "form-control-plaintext" : "form-control"
                   value=versioned?data[1].value:data[1])
+    else if isArray(data[1])
+        div.container-fluid(style="padding-top: 5px;")
+            +renderarray(data,options)(style="padding-top: 5px;")
     else
-        div.card
-            div.card-body
-                div
-                    if text
-                        p.card-text=text
-                    if isArray(data[1])
-                        +renderarray(data,options)
-                    else
-                        - var stats = Object.entries(data[1]).map(entry=>[...entry,uuid()])
-                        each stat,idx in stats
-                            if isValue(stat[1])
-                                +jsonator(stat,stat[0],{...options,"path":options.path+"/"+stat[0]})
-                        div.tabs
-                            if stats.find(stat=>isObject(stat[1]))
-                                ul(class="nav nav-tabs" role="tablist")
-                                    - var firstPage = true
-                                    each stat,idx in stats
-                                        if isObject(stat[1])
-                                            li.nav-item(role="presentation")
-                                                button(
-                                                    class=`nav-link ${firstPage?"active":""}`
-                                                    data-bs-toggle="tab" 
-                                                    data-bs-target="#tab-content-"+stat[2]
-                                                    type="button"
-                                                    id="tab-"+stat[2]
-                                                    aria-controls="tab-content-"+stat[2]
-                                                    hx-target="#tab-content-"+stat[2]
-                                                    role="tab")=stat[0]
-                                            - firstPage = false
-                                div(class="tab-content" role="tabpanel")
-                                    - var firstPage = true
-                                    each stat,idx in stats
-                                        if isObject(stat[1])
-                                            div(class=`tab-pane fade ${firstPage?"active show":""}` 
-                                                id="tab-content-"+stat[2] 
-                                                role="tabpanel"
-                                                aria-labelledby="tab-"+stat[2])
-                                                +jsonator(stat,undefined,{...options,"path":options.path+"/"+stat[0]})
-                                            - firstPage = false
+        - var stats = Object.entries(data[1]).map(entry=>[...entry,uuid()])
+        div.container-fluid(style="padding-top: 5px;")
+            each stat,idx in stats.filter(stat=>isValue(stat[1]))
+                +jsonator(stat,stat[0],{...options,"path":options.path+"/"+stat[0]})
+            div.tabs
+                ul(class="nav nav-tabs" role="tablist")
+                    each stat,idx in stats.filter(stat=>isObject(stat[1]))
+                        li.nav-item(role="presentation")
+                            button(
+                                class=`nav-link ${idx===0?"active":""}`
+                                data-bs-toggle="tab" 
+                                data-bs-target="#tab-content-"+stat[2]
+                                type="button"
+                                id="tab-"+stat[2]
+                                aria-controls="tab-content-"+stat[2]
+                                hx-target="#tab-content-"+stat[2]
+                                role="tab")=stat[0]
+                div(class="tab-content" role="tabpanel")
+                    each stat,idx in stats.filter(stat=>isObject(stat[1]))
+                        div(class=`tab-pane fade container-fluid border ${idx===0?"active show":""}` 
+                            id="tab-content-"+stat[2] 
+                            role="tabpanel"
+                            aria-labelledby="tab-"+stat[2])
+                            +jsonator(stat,undefined,{...options,"path":options.path+"/"+stat[0]})

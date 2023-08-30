@@ -8,8 +8,8 @@ let lastTs=0;
 export default function getConfig():Promise<pug.LocalsObject> {
     return ((lastValue && ((Date.now()-lastTs)<options.requestRateLimit)) ?
         Promise.resolve(lastValue) :
-        espRequest({...options,path:"/config/"})).then(config=>{
+        espRequest({...options,path:options.paths.config,method:"post"})).then(config=>{
             lastTs=Date.now();            
-            return lastValue=config;
+            return lastValue={config};
         })
 }

@@ -1,6 +1,28 @@
 {
     "listenPost": 3000,
-    "serverAddress":"192.168.1.107",
-    "serverProtocol":"http",
-    "espAddress": "192.168.1.30"
+    "serverAddress": "192.168.1.107",
+    "serverProtocol": "http",
+    "espAddress": "192.168.1.30",
+    "pages": [
+        {
+            "name": "Files",
+            "url": "chip/files/",
+            "trigger": "click"
+        },
+        {
+            "name": "Status",
+            "url": "status/",
+            "trigger": "load"
+        },
+        {
+            "name": "Config",
+            "url": "chip/config/",
+            "trigger": "click"
+        },
+        {
+            "name": "Logs",
+            "url": "logs",
+            "trigger": "load"
+        }
+    ]
 }

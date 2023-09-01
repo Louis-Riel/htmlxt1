@@ -11,9 +11,8 @@
     "typescript": "^5.1.6"
   },
   "scripts": {
-    "test": "jest",
-    "start": "jest --passWithNoTests ./src/index.ts",
-    "start:dev": "npx nodemon"
+    "test": "jest --passWithNoTests ./src/index.ts",
+    "start": "npx nodemon"
   },
   "dependencies": {
     "@types/node": "^20.5.1",

@@ -22,13 +22,10 @@ export default function TemplatePage(template:string,data:Promise<pug.LocalsObje
                         }
                     });
             } else {
-                reject({error:"Cannot load",template})
+                reject(new Error("Cannot load "+template))
             }
         } catch(err:any) {
-            reject({
-                statusCode:err.code === "ENOENT" ? "404" : "500",
-                statusMessage: err.code === "ENOENT" ? `${template} template not found` : err.message ?? JSON.stringify(err)
-            });
+            reject(new Error(err.code === "ENOENT" ? `${template} template not found` : err.message ?? JSON.stringify(err)));
         }    
     })
 }

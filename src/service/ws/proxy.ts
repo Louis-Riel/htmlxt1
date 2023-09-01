@@ -3,7 +3,7 @@ import http, { IncomingMessage } from 'http';
 import WebSocketLink from '../../model/wssession';
 import { AddressInfo, Socket } from 'net';
 import TemplatePage from '../templatepage';
-import ServiceSession from './downstream'
+import ServiceSession from './servicesession'
 import { WsConfig } from '../../model/config/wsConfig';
 import { LocalsObject } from 'pug';
 
@@ -69,7 +69,7 @@ export default function WSProxy(server:http.Server) {
 
         function GetLink(): Promise<WebSocketLink> {
             return new Promise<WebSocketLink>((resolve,reject)=>{
-                ServiceSession(clients).then(service=>{
+                ServiceSession().then(service=>{
                     const client = Array.from(clients).find(item=>!item[1].client.connected)
                     const wsServer = client ? client[1]?.client?.listener : new WebSocketServer(wsConfig.webSocketServer);
                     client && clients.delete(client[0]);
@@ -98,7 +98,7 @@ export default function WSProxy(server:http.Server) {
                         try {
                             let msg = JSON.parse(unparsed);
                             if (msg.HEADERS?.["HX-Trigger-Name"] === "Config") {
-                                console.log(JSON.stringify(formToObject(msg)))
+                                console.log(JSON.stringify(formToObject(msg).config))
                             }
                         } catch(err) {
                             console.error(err);
@@ -161,12 +161,7 @@ export default function WSProxy(server:http.Server) {
                                             logdate: parts[3],
                                             logsrc: parts[4],
                                             logmsg: parts[5]
-                                        })).then(page => ws.send(JSON.stringify({
-                                            origin: "service",
-                                            id: "logs",
-                                            type: "logline",
-                                            ...page
-                                        }), err => err && console.error(err))).catch(console.error);
+                                        })).then(page => ws.send(page.page), err => err && console.error(err)).catch(console.error);
                                     }
                                 }
                             }

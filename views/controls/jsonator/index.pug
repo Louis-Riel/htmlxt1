@@ -1,5 +1,5 @@
 mixin renderarray(data,options)
-    - const columns=data[1].reduce((cols,cur)=>[...cols,...Object.keys(cur).filter(col=>!cols.includes(col))],[])
+    - const columns=data[1].reduce((cols,cur)=>cols.concat(Object.keys(cur).filter(col=>!cols.includes(col))),[])
     table#table(class='table caption-top table-sm table-striped table-bordered' data-toggle="table" data-sortable="true")
         thead.table-light
             tr
@@ -44,18 +44,17 @@ mixin jsonator(data,caption,options)
                 ul(class="nav nav-tabs" role="tablist")
                     each stat,idx in stats.filter(stat=>isObject(stat[1]))
                         li.nav-item(role="presentation")
-                            button(
-                                class=`nav-link ${idx===0?"active":""}`
-                                data-bs-toggle="tab" 
-                                data-bs-target="#tab-content-"+stat[2]
-                                type="button"
-                                id="tab-"+stat[2]
-                                aria-controls="tab-content-"+stat[2]
-                                hx-target="#tab-content-"+stat[2]
-                                role="tab")=stat[0]
+                            button(class=`nav-link ${idx===0?"active":""}`
+                                   data-bs-toggle="tab" 
+                                   data-bs-target="#tab-content-"+stat[2]
+                                   type="button"
+                                   id="tab-"+stat[2]
+                                   aria-controls="tab-content-"+stat[2]
+                                   hx-target="#tab-content-"+stat[2]
+                                   role="tab")=stat[0]
                 div(class="tab-content" role="tabpanel")
                     each stat,idx in stats.filter(stat=>isObject(stat[1]))
-                        div(class=`tab-pane fade container-fluid border ${idx===0?"active show":""}` 
+                        div(class=`tab-pane fade container-fluid ${idx===0?"active show":""}` 
                             id="tab-content-"+stat[2] 
                             role="tabpanel"
                             aria-labelledby="tab-"+stat[2])

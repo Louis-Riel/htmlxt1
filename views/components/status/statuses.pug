@@ -1,0 +1,18 @@
+ul(class="nav nav-tabs" role="tablist")
+    each page in Object.entries(paths.statuses)
+        li.nav-item(role="presentation")
+            button.nav-link(data-bs-toggle="tab"
+                            id=`${page[0]}-tab`
+                            hx-get=`/chip${page[1]}`
+                            hx-target=`#tab-content-${page[0]}`
+                            hx-swap='innerHTML'
+                            type="button"
+                            role="tab"
+                            aria-controls=`tab-content-${page[0]}`
+                            data-bs-target=`#tab-content-${page[0]}`)=page[0]
+div.tab-content
+    each page in Object.keys(paths.statuses)
+        div(id=`tab-content-${page}`
+            class="tab-pane fade"
+            role="tabpanel"
+            aria-labelledby=`${page}-tab`)

@@ -11,7 +11,6 @@ html(lang='en' data-bs-theme='dark')
   body
     div#header(hx-get='/heading' hx-trigger="load")
       h1.display-6="Loading..."
-    - const pages = [{name:"files",url:"chip/files/",trigger:"click"},{name:"status",url:"chip/status/",trigger:"click"},{name:"config",url:"chip/config/",trigger:"click"},{name:"logs",url:"logs",trigger:"load"}]
     ul(class="nav nav-tabs" role="tablist")
       each page in pages
         li.nav-item(role="presentation")

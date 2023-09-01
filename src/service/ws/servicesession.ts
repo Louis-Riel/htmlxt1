@@ -1,11 +1,10 @@
 import WebSocket from 'ws';
 import { Downstream } from '../../model/config/downstream';
-import WebSocketLink from '../../model/wssession';
 
 const downstream:Downstream = require('../../config/downstream.json')
 
 const esps:Map<string,WebSocket> = new Map<string,WebSocket>();
-export default function ServiceSession(clients:Map<WebSocket,WebSocketLink>):Promise<WebSocket> {
+export default function ServiceSession():Promise<WebSocket> {
     const url = `ws://${downstream.host}:${downstream.ws.port}/${downstream.ws.path}`;
     if (esps.get(url)?.readyState === WebSocket.OPEN) {
         return Promise.resolve(esps.get(url) as WebSocket);

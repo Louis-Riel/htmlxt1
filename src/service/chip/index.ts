@@ -1,5 +1,5 @@
 import * as options from "../../config/downstream.json"
-import { IncomingMessage, RequestOptions, ServerResponse, request } from "http";
+import { RequestOptions, request } from "http";
 import { host } from "../../config/downstream.json"
 import { EspFile } from '../../model/espfile';
 import { Request } from "../../model/urlmapping";
@@ -7,37 +7,21 @@ import { LocalsObject } from "pug";
 import { URL } from "url";
 const prefixLen = options.paths.statuses.System.length;
 
-let lastConfig:LocalsObject;
-let lastStatus:LocalsObject;
-let lastTs=0;
-
 export function getConfig():Promise<LocalsObject> {
-    return ((lastConfig && ((Date.now()-lastTs)<options.requestRateLimit)) ?
-        Promise.resolve(lastConfig) :
-        espRequest({...options,path:options.paths.config,method:"post"})).then(config=>{
-            lastTs=Date.now();            
-            return lastConfig={config};
-        })
+    return espRequest({...options,path:options.paths.config,method:"post"})
+            .then(config => {return {config}})
 }
 
 export function getStatuses():Promise<LocalsObject> {
-    return (lastStatus && ((Date.now()-lastTs)<options.requestRateLimit)) ?
-        Promise.resolve(lastStatus) :
-        Promise.allSettled(Object.entries(options.paths.statuses).map(path => espRequest({...options,path:path[1],method:"post"})
-                                                                .then(status=>{return {path:path[0],status}})))
-               .then(res=>lastStatus=res.filter(item=>item.status === "fulfilled" && (lastTs=Date.now()))
-                                        .reduce((pv,item:any)=>{return {...pv,[item.value.path]:item.value.status}},
-                                                    new Map<string,LocalsObject>()))
+    return Promise.allSettled(Object.entries(options.paths.statuses).map(path => espRequest({...options,path:path[1],method:"post"})
+                                                                 .then(status=>{return {path:path[0],status}})))
+               .then(res=>res.filter(item=>item.status === "fulfilled")
+                             .reduce((pv,item:any)=>{return {...pv,[item.value.path]:item.value.status}},new Map<string,LocalsObject>()))
                .then(data=>{return {data}})
 }
 
 export function getStatus(res:Request):Promise<LocalsObject> {
-    const url = new URL(res.req.url || "/status/app")
-    const service = url.pathname.substring(prefixLen);
-    return (lastStatus && ((Date.now()-lastTs)<options.requestRateLimit)) ?
-        Promise.resolve(lastStatus[service]) :
-        espRequest({...options,path:url.pathname,method:"post"})
-            .then(status=>{return {path:url.pathname,status}})
+    return espRequest({...options,path:res.req.url?.substring(5),method:"post"}).then(data=>{return{data}})
 }
 
 export function files(res: Request):Promise<LocalsObject> {
@@ -56,8 +40,8 @@ export function files(res: Request):Promise<LocalsObject> {
                 res.on("data",chunk => data+=chunk.toString());
                 res.on("end",()=>res.statusCode === 200 ? 
                                 resolve(packageData(data)) :
-                                reject({statusCode:res.statusCode,statusMessage:res.statusMessage??"",error:data.toString()}))
-                res.on("error",(err:Error)=>reject({statusCode:res.statusCode,statusMessage:err.message,error:data.toString()}))
+                                reject(new Error(res.statusMessage)))
+                res.on("error",reject)
 
                 function packageData(data: string): LocalsObject {
                     const obj = JSON.parse(data);
@@ -91,28 +75,31 @@ export function files(res: Request):Promise<LocalsObject> {
     }
 }
 
-function espRequest(options: RequestOptions): Promise<LocalsObject> {
-    return new Promise((resolve, reject) => {
-        try {
-            request(options, res => {
+const requestCache:Map<string,[number,LocalsObject]> = new Map<string,[number,LocalsObject]>()
+
+function espRequest(roptions: RequestOptions): Promise<LocalsObject> {
+    const cacheKey = JSON.stringify(roptions);
+    return (requestCache.has(cacheKey) && ((Date.now()-(requestCache.get(cacheKey)?.[0]??0)) < options.requestRateLimit)) ?
+        Promise.resolve(requestCache.get(cacheKey)?.[1] ?? {}) :
+        new Promise((resolve, reject) => {
+            request(roptions, res => {
                 let data:Buffer = Buffer.from("");
-                res.on("data", chunk => data.length === 0 ? data = Buffer.from(chunk) : 
-                                                            data = Buffer.concat([data,chunk]));
+                res.on("data", chunk => data = data.length === 0 ? Buffer.from(chunk) : 
+                                                                   Buffer.concat([data,chunk]));
                 res.on("end", () => {
                     if (res.statusCode === 200) { 
                         try {
-                            resolve(JSON.parse(data.toString()));
+                            console.log(roptions.method,roptions.path)
+                            requestCache.set(cacheKey,[Date.now(),JSON.parse(data.toString())]);
+                            resolve(requestCache.get(cacheKey)?.[1] ?? {});
                         } catch (ex) {
-                            reject({ex,options});
+                            reject(ex);
                         }
                     } else {
-                        reject({ res, error: data.toString(),options });
+                        reject(new Error(res.statusMessage));
                     }
                 })
-                res.on("error", error=>reject({error,options}));
-            }).on("error", error=>reject({error,options})).end();
-        } catch (err) {
-            reject(err);
-        }
-    });
+                res.on("error", reject);
+            }).on("error", reject).end();
+        });
 }

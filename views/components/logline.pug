@@ -1,14 +1,15 @@
-tr
-    - var level = ""
-    if (loglevel === "W")
-        - level="text-warning"
-    else if (loglevel === "I")
-        - level="text-success"
-    else if (loglevel === "E")
-        - level="text-danger"
-    else if (loglevel === "D")
-        - level="text-info"
-    td(class=level)=loglevel
-    td.text-info=logdate
-    td=logsrc
-    td(class=level)=logmsg
+tbody(id="logs" hx-swap-oob="afterbegin")
+    tr
+        - var level = ""
+        if (loglevel === "W")
+            - level="text-warning"
+        else if (loglevel === "I")
+            - level="text-success"
+        else if (loglevel === "E")
+            - level="text-danger"
+        else if (loglevel === "D")
+            - level="text-info"
+        td(class=level)=loglevel
+        td.text-info=logdate
+        td=logsrc
+        td(class=level)=logmsg

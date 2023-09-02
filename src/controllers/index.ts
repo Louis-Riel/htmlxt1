@@ -24,8 +24,8 @@ const server = http.createServer((req, res) => {
 function put(res: Request) {
    if (res.req.url === "/espcommand") {
       let body = "";
-      res.req.on("readable",()=>{
-         body+=res.req.read();
+      res.req.on("data",chunck=>{
+         body+=chunck.toString();
       })
       res.req.on("end",()=>{
          sendCommand(body)

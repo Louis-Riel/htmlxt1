@@ -1,12 +1,12 @@
 mixin espcommand(value,caption,options)
     div.d-flex.align-self-end
         each command in value[1]
-            form(hx-put="/espcommand" hx-target=`#cmd${options.path.replaceAll("/","_")}-${command.caption}` hx-swap="innerHTML") 
+            form(hx-put="/espcommand" hx-target=`#cmd${options.path.replaceAll(/[^A-Za-z0-9]/g,"_")}-${command.command}` hx-swap="innerHTML") 
                 button(type="submit" class="btn btn-outline-secondary")=command.caption
-                div(id=`cmd${options.path.replaceAll("/","_")}-${command.caption}` style="display=none;")
+                div(id=`cmd${options.path.replaceAll(/[^A-Za-z0-9]/g,"_")}-${command.command}` style="display=none;")
                 if options.parent
                     input(type="hidden" name="name" value=options.parent.name)
-                each fld of Object.entries(command)
+                each fld of Object.entries(command).filter(command=>!["classname","caption","HTTP_METHOD"].includes(command[0]))
                     input(type="hidden" name=fld[0] value=fld[1])
 
 mixin esppin(value,caption,options)

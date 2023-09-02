@@ -55,13 +55,14 @@ mixin jsonator(data,caption,options)
     else
         - var stats = Object.entries(data[1]).map(entry=>[...entry,uuid()])
         if (options.tiled)
-            fieldset(class=`flex-wrap d-inline-flex ${(caption||data[0]) ? "border" : ""} mt-3 pt-1 align-self-start`)
+            fieldset(class=`d-flex flex-column flex-wrap ${(caption||data[0]) ? "border" : ""} mt-3 pt-1 align-self-start`)
                 legend.header.text-primary.mt-n4.position-absolute=caption?caption:data[0]
-                fieldset(class=`flex-wrap d-inline-flex ${(caption||data[0]) ? "border" : ""} mt-3 pt-1 ms-3 me-3 align-self-start`)
+                fieldset(class=`d-flex flex-row ${(caption||data[0]) ? "border" : ""} mt-3 pt-1 ms-3 me-3 align-self-start`)
                     each stat,idx in stats.filter(stat=>isValue(stat[1]))
                         +renderfield(stat[1],stat[0],{...options,"path":options.path+"/"+stat[0],"parent":data[1]})
-                each stat,idx in stats.filter(stat=>isObject(stat[1]))
-                    +jsonator(stat,undefined,{...options,"path":options.path+"/"+stat[0],"parent":data[1]})
+                fieldset(class=`d-flex flex-row ${(caption||data[0]) ? "border" : ""} mt-3 pt-1 ms-3 me-3 align-self-start`)
+                    each stat,idx in stats.filter(stat=>isObject(stat[1]))
+                        +jsonator(stat,undefined,{...options,"path":options.path+"/"+stat[0],"parent":data[1]})
         else
             fieldset.container-fluid(style="padding-top: 5px;")
                 div.d-flex

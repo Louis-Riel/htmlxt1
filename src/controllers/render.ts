@@ -24,8 +24,9 @@ export const mappings:UrlMapping[] = [
    {startsWith:"/chip/status/",template:()=>"/status/index.pug",datas:[()=>Promise.resolve(siteConfig),(res)=>getStatus(res)]},
    {equals:"/chip/config/",template:()=>"/config/index.pug",datas:[()=>Promise.resolve(siteConfig),getConfig]},
    {startsWith:"/dist",renderer:GetFileServer((res)=>res.req.url?.substring(6)??"", "node_modules"),datas:[]},
-   {endsWith:".css",renderer:GetFileServer((res)=>res.req.url as string, "css"),datas:[]},
-   {endsWith:".js",renderer:GetFileServer((res)=>res.req.url as string, "js"),datas:[]},
+   {endsWith:".css",renderer:GetFileServer((res)=>res.req.url as string, "assets/css"),datas:[]},
+   {endsWith:".css.map",renderer:GetFileServer((res)=>res.req.url as string, "assets/css"),datas:[]},
+   {endsWith:".js",renderer:GetFileServer((res)=>res.req.url as string, "assets/js"),datas:[]},
    {lastIndexIsZero:"/",template:(res)=>res.req.url?.substring(1) + ".pug",datas:[()=>Promise.resolve(siteConfig)]},
 ];
 

@@ -2,7 +2,9 @@
     "listenPost": 3000,
     "serverAddress": "192.168.1.107",
     "serverProtocol": "http",
+    "espProtocol": "http",
     "espAddress": "192.168.1.30",
+    "espPort": 80,
     "pages": [
         {
             "name": "Files",

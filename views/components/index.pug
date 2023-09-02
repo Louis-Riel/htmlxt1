@@ -5,13 +5,11 @@ html(lang='en' data-bs-theme='dark')
     meta(name="description" content="ESP32 on HTMX")
     meta(name="viewport" content="width=device-width, initial-scale=1")
     title htmlx test 1
-    link(as='style' rel="preload" onload="this.onload=null;this.rel='stylesheet'" href='dist/bootstrap/dist/css/bootstrap.min.css')
+    link(as='style' rel="preload" onload="this.onload=null;this.rel='stylesheet'" href='bootstrap.css')
     noscript
       link(rel="stylesheet" href="style.css")
   body
-    div#header(hx-get='/heading' hx-trigger="load")
-      h1.display-6="Loading..."
-    ul(class="nav nav-tabs" role="tablist")
+    ul(class="nav" role="tablist")
       each page in pages
         li.nav-item(role="presentation")
           button.nav-link(data-bs-toggle="tab"

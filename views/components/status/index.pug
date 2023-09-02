@@ -1,2 +1,11 @@
 include ../../controls/jsonator/index
-+jsonator(["Status",data],"Status",{"editable": true,"path":"/status", "expand": true})
++jsonator([undefined,data],undefined,{"editable": false,
+                                      "path":"/status", 
+                                      "expand": true,
+                                      "mutations" : [
+                                        {
+                                            "endswith": "/commands",
+                                            "mutator": "espcommand"
+                                        }
+                                      ]
+                                     })

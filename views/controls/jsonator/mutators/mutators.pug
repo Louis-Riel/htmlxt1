@@ -1,0 +1,11 @@
+mixin espcommand(value,caption,options)
+    div.d-flex.align-self-end
+        each command in value[1]
+            form(hx-put="/espcommand" 
+                hx-target=`#cmd-${options.path.replaceAll("/","_")}-res`
+                name=`cmd-${options.path}`) 
+                button(type="submit" class="btn btn-outline-secondary")=command.caption
+                input(type="hidden",name="name" value=options.parent.name)
+                div(id=`cmd-${options.path.replaceAll("/","_")}-res`)
+                each fld of Object.entries(command)
+                    input(type="hidden",name=fld[0] value=fld[1])

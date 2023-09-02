@@ -4,11 +4,15 @@ import getType from '../utils/getType';
 import { Request } from "../model/urlmapping";
 import { deflate,gzip  } from "node:zlib";
 import { Render } from "./render";
+import { sendCommand } from "../service/chip";
 
 const server = http.createServer((req, res) => {
    switch (req.method) {
       case "GET":
          get(res);
+         break;
+      case "PUT":
+         put(res);
          break;
       default:
          res.statusCode = 500;
@@ -16,6 +20,20 @@ const server = http.createServer((req, res) => {
    }
 });
 
+
+function put(res: Request) {
+   if (res.req.url === "/espcommand") {
+      let body = "";
+      res.req.on("readable",()=>{
+         body+=res.req.read();
+      })
+      res.req.on("end",()=>{
+         sendCommand(body)
+            .catch(err=>res.writeHead(500,err.message))
+            .finally(()=>res.end())
+      })
+   }
+}
 
 function get(res: Request) {
    Render(res).then(ManageContentType)

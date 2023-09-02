@@ -5,21 +5,21 @@ if resetPathCookie
 else
     script.
         document.cookie='espfolder=!{url.substring(5)}; path=/;'
-    table#files(class='table caption-top table-sm')
+    table#files(class='table table-striped table-dark table-hover caption-top table-sm table-striped table-bordered')
         caption
             - var path = "";
-            a(hx-get=`/chip/files/`,
+            a.text-secondary(hx-get=`/chip/files/`,
               href="#"
               hx-headers='{"espfolder":"/"}'
               hx-target="#files")=`/`
             each folder,idx in url.substring(5).split("/").filter(e=>e)
                 - path+=`${idx===1?"":"/"}${folder}`
-                a(hx-get=`/chip/files${path}`,
+                a.text-secondary(hx-get=`/chip/files${path}`,
                   href="#"
                   style="padding-left: 5px;"
                   hx-headers='{"espfolder":"' + path + '"}'
                   hx-target="#files")=`/${folder}`
-        thead.table-light
+        thead
             tr
                 th(scope="col")="Name"
                 th(scope="col")="Size"
@@ -48,7 +48,7 @@ else
                 td
                     div.filesize=file.size
             - totalSize+=file.size
-        tfoot.table-light
+        tfoot
             tr
                 th="Total"
                 th=totalSize

@@ -1,0 +1,63 @@
+@import "../../node_modules/bootstrap/scss/functions";
+
+$primary: #97ea44;
+$secondary: aqua;
+
+@import "../../node_modules/bootstrap/scss/variables";
+@import "../../node_modules/bootstrap/scss/mixins";
+
+$theme-colors: map-merge($theme-colors, (
+    "panel-bg": rgb(200,140,23),
+));
+
+.grated, body {
+    background: linear-gradient(to bottom,rgb(4 4 4),#3a4a38);
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+html,body {
+    height: 100%;
+}
+
+.nav-tabs {
+    margin-top: 5px;
+}
+
+.nav-link {
+    color: $secondary !important;
+    background-color: transparent !important;
+    opacity: 80% !important;
+}
+
+.nav-link.active {
+    border-bottom: solid #1976d2 !important;
+    margin-bottom: 5px !important;
+    opacity: 100% !important;
+}
+
+table {
+    thead {
+        tr{
+            background-color: black !important;
+            text-align: center !important;
+            position: sticky;
+            top: 0px;
+
+            th {
+                background-color: black !important;
+                text-align: center !important;
+            }    
+        }
+    }
+}
+
+legend.header {
+    padding-left: 5px !important;
+    padding-right: 5px !important;
+    width: auto !important;
+}
+
+$enable-negative-margins: true;
+
+@import "../../node_modules/bootstrap/scss/bootstrap";

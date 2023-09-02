@@ -1,61 +1,38 @@
-mixin renderarray(data,options)
-    - const columns=data[1].reduce((cols,cur)=>cols.concat(Object.keys(cur).filter(col=>!cols.includes(col))),[])
-    table#table(class='table caption-top table-sm table-striped table-bordered' data-toggle="table" data-sortable="true")
-        thead.table-light
-            tr
-                each column in columns
-                    th(scope="col" data-sortable="true")=column
-        tbody
-        each row,idx in data[1]
-            tr
-                - var path = `${options.path}[${idx}]`;
-                form(ws-send=options.path name=options.path)
-                    each column in columns
-                        td
-                            +jsonator([column,row[column]],undefined,{...options,path:`${path}/${column}`,expand:true,plaintext:true})
-
-mixin jsonator(data,caption,options)
-    - const uuid = ()=>([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,a=>(a^Math.random()*16>>a/4).toString(16))
+include ./mutators/mutators
+mixin renderfield(value,caption,options)
     - const isVersioned = (val)=>(typeof val === "object") && (val.value !== undefined) && (val.version !== undefined)
-    - const isObject = (val)=>(typeof val === "object") && (typeof val !== "string") && !isVersioned(val)
-    - const isArray = (val)=>Array.isArray(val) && (typeof val !== "string")
-    - const isValue = (val)=>!isArray(val) && !isObject(val)
-    - options = {...options,"path":options?.path??`/${data[0]}`}
-    if isValue(data[1])
+    - var versioned=isVersioned(value)
+    if options.editable
         div.d-flex
-            - var versioned=isVersioned(data[1])
             if caption
                 span(class="input-group-text")=caption
             input(type="text"
-                  style=options.expand ? 'width: 100%;' : 'width: auto;'
-                  readonly=!options.editable
-                  name=options.path + (versioned?`(${data[1].version})`:"")
-                  class=options.plaintext ? "form-control-plaintext" : "form-control"
-                  value=versioned?data[1].value:data[1])
-    else if isArray(data[1])
-        div.container-fluid(style="padding-top: 5px;")
-            +renderarray(data,options)(style="padding-top: 5px;")
+                style=options.expand ? 'width: 100%;' : 'width: auto;'
+                readonly=!options.editable
+                name=options.path + (versioned?`(${value.version})`:"")
+                class=options.plaintext ? "form-control-plaintext" : "form-control"
+                value=versioned?value.value:value)
     else
-        - var stats = Object.entries(data[1]).map(entry=>[...entry,uuid()])
-        div.container-fluid(style="padding-top: 5px;")
-            each stat,idx in stats.filter(stat=>isValue(stat[1]))
-                +jsonator(stat,stat[0],{...options,"path":options.path+"/"+stat[0]})
-            div.tabs(style="padding-top: 5px;")
-                ul(class="nav nav-tabs" role="tablist")
-                    each stat,idx in stats.filter(stat=>isObject(stat[1]))
-                        li.nav-item(role="presentation")
-                            button(class=`nav-link ${idx===0?"active":""}`
-                                   data-bs-toggle="tab" 
-                                   data-bs-target="#tab-content-"+stat[2]
-                                   type="button"
-                                   id="tab-"+stat[2]
-                                   aria-controls="tab-content-"+stat[2]
-                                   hx-target="#tab-content-"+stat[2]
-                                   role="tab")=stat[0]
-                div(class="tab-content" role="tabpanel")
-                    each stat,idx in stats.filter(stat=>isObject(stat[1]))
-                        div(class=`tab-pane fade container-fluid ${idx===0?"active show":""}` 
-                            id="tab-content-"+stat[2] 
-                            role="tabpanel"
-                            aria-labelledby="tab-"+stat[2])
-                            +jsonator(stat,undefined,{...options,"path":options.path+"/"+stat[0]})
+        div.d-flex.flex-column.align-items-center(class=caption?"grated":"")
+            if caption
+                span.text-secondary=caption
+            span.text-primary(name=options.path + (versioned?`(${value.version})`:""))=versioned?value.value:value            
+
+mixin renderarray(data,options)
+    - const columns=data[1].reduce((cols,cur)=>cols.concat(Object.keys(cur).filter(col=>!cols.includes(col))),[])
+    div.container-fluid(style="padding-top: 5px;")
+        table#table(class='table table-striped table-dark table-hover caption-top table-sm table-striped table-bordered' data-toggle="table" data-sortable="true")
+            thead
+                tr
+                    each column in columns
+                        th.text-secondary(scope="col" data-sortable="true")=column
+            tbody
+            each row,idx in data[1]
+                tr
+                    - var path = `${options.path}[${idx}]`;
+                    form(ws-send=options.path name=options.path)
+                        each column in columns
+                            td
+                                +jsonator([column,row[column]],undefined,{...options,path:`${path}/${column}`,expand:true,plaintext:true})
+
+mixin jsonator(data,caption,options)

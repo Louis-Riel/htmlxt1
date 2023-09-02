@@ -56,13 +56,21 @@ export default function WSProxy(server:http.Server) {
                 link.client.socket = socket;
                 link.client.ws = ws;
                 link.client.connected = true;
+                ws.onmessage = (event: WebSocket.MessageEvent) => pipeMessage(link.service, event, false);
                 link.service.onmessage = (event) => Array.from(clients.values())
                                                          .filter(({client}) => client.connected && client.ws)
                                                          //.filter(()=>{console.log(event.type, event.data);return true;})
                                                          .forEach(({client}) => pipeMessage(client.ws as WebSocket,event,true))
 
-                ws.onmessage = (event: WebSocket.MessageEvent) => pipeMessage(link.service, event, false);
+                link.service.onerror = err => console.error("Service connection error",err.message);
                 ws.onerror = err => CloseLink(err, link);
+
+                link.service.onopen = evt => console.log(evt.target.url,"service connection opened");
+                ws.onopen = _evt => console.log("Client", link.client.socket.remoteAddress,"connection opened")
+
+                link.service.onclose = _evt => console.log("Service connection closed")
+                ws.onclose = _evt => console.log("Client", link.client.socket.remoteAddress,"connection closed")
+
                 console.log("Link established, now at",clients.size,"sessions",Array.from(clients.values()).filter(link=>link.client.connected).length,"connected");
             }
         }

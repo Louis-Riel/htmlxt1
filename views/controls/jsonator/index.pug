@@ -36,3 +36,53 @@ mixin renderarray(data,options)
                                 +jsonator([column,row[column]],undefined,{...options,path:`${path}/${column}`,expand:true,plaintext:true})
 
 mixin jsonator(data,caption,options)
+    - const uuid = ()=>([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,a=>(a^Math.random()*16>>a/4).toString(16))
+    - const isVersioned = (val)=>(typeof val === "object") && (val.value !== undefined) && (val.version !== undefined)
+    - const isObject = (val)=>(typeof val === "object") && (typeof val !== "string") && !isVersioned(val)
+    - const isArray = (val)=>Array.isArray(val) && (typeof val !== "string")
+    - const isValue = (val)=>!isArray(val) && !isObject(val)
+    - options = {...options,"path":options?.path??`/${data[0]}/status/cmd`}
+    - mutator = options.mutations?.find(mut=>options.path.endsWith(mut.endswith))?.mutator
+
+    if mutator
+        +#{mutator}(data,caption,options)
+    else if isValue(data[1])
+        +renderfield(data[1],caption ,options)
+    else if isArray(data[1])
+        +renderarray(data,options)
+    else
+        - var stats = Object.entries(data[1]).map(entry=>[...entry,uuid()])
+        if (options.tiled)
+            fieldset(class=`flex-wrap d-inline-flex ${(caption||data[0]) ? "border" : ""} mt-3 pt-1 pb-1 ms-4 align-self-start`)
+                legend.header.text-primary.mt-n4.position-absolute=caption?caption:data[0]
+                fieldset(class=`flex-wrap d-inline-flex ${(caption||data[0]) ? "border" : ""} mt-3 pt-1 pb-1 ms-4 align-self-start`)
+                    each stat,idx in stats.filter(stat=>isValue(stat[1]))
+                        +renderfield(stat[1],stat[0],{...options,"path":options.path+"/"+stat[0],"parent":data[1]})
+                if !caption && !data[0]
+                    div.d-block(style="width:100%;")
+                each stat,idx in stats.filter(stat=>isObject(stat[1]))
+                    +jsonator(stat,undefined,{...options,"path":options.path+"/"+stat[0],"parent":data[1]})
+        else
+            div.container-fluid(style="padding-top: 5px;")
+                div.d-flex
+                    each stat,idx in stats.filter(stat=>isValue(stat[1]))
+                        +jsonator(stat,stat[0],{...options,"path":options.path+"/"+stat[0]})
+                div.tabs(style="padding-top: 5px;")
+                    ul(class="nav nav-tabs" role="tablist")
+                        each stat,idx in stats.filter(stat=>isObject(stat[1]))
+                            li.nav-item(role="presentation")
+                                button(class=`nav-link ${idx===0?"active":""}`
+                                    data-bs-toggle="tab" 
+                                    data-bs-target="#tab-content-"+stat[2]
+                                    type="button"
+                                    id="tab-"+stat[2]
+                                    aria-controls="tab-content-"+stat[2]
+                                    hx-target="#tab-content-"+stat[2]
+                                    role="tab")=stat[0]
+                    div(class="tab-content" role="tabpanel")
+                        each stat,idx in stats.filter(stat=>isObject(stat[1]))
+                            div(class=`tab-pane fade container-fluid ${idx===0?"active show":""}` 
+                                id="tab-content-"+stat[2] 
+                                role="tabpanel"
+                                aria-labelledby="tab-"+stat[2])
+                                +jsonator(stat,undefined,{...options,"path":options.path+"/"+stat[0]})

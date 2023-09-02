@@ -15,6 +15,7 @@ export default function ServiceSession():Promise<WebSocket> {
             esps.set(url,service);
             service.onopen = (event)=>{event.target.send("Connected",err=>err?reject(err):resolve(event.target))};
             service.onerror = (err)=>reject(err);
+            service.onclose = event => console.log(event.target.url,"connection closed",event.wasClean ? "cleanly" : "dirty")
         })
     }
 }

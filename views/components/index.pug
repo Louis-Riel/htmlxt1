@@ -25,7 +25,7 @@ html(lang='en' data-bs-theme='dark')
     div.tab-content(hx-ext="ws" ws-connect=`ws://${serverAddress}:${listenPost}/ws`)
       each page in pages
         div(id=`tab-content-${page.name}`
-            class="tab-pane fade"
+            class="tab-pane fade modal-body"
             role="tabpanel"
             aria-labelledby=`${page.name}-tab`)
     script(src='dist/htmx.org/dist/htmx.js')

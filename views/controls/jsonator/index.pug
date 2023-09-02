@@ -42,8 +42,10 @@ mixin jsonator(data,caption,options)
     - const isArray = (val)=>Array.isArray(val) && (typeof val !== "string")
     - const isValue = (val)=>!isArray(val) && !isObject(val)
     - options = {...options,"path":options?.path??`/${data[0]}/status/cmd`}
-    - mutator = options.mutations?.find(mut=>options.path.endsWith(mut.endswith))?.mutator
-
+    - 
+        mutator = options.mutations?.find(mut=>mut.endswith ? 
+                                                options.path.endsWith(mut.endswith) :
+                                                options.path.startsWith(mut.startswith))?.mutator
     if mutator
         +#{mutator}(data,caption,options)
     else if isValue(data[1])
@@ -53,20 +55,18 @@ mixin jsonator(data,caption,options)
     else
         - var stats = Object.entries(data[1]).map(entry=>[...entry,uuid()])
         if (options.tiled)
-            fieldset(class=`flex-wrap d-inline-flex ${(caption||data[0]) ? "border" : ""} mt-3 pt-1 pb-1 ms-4 align-self-start`)
+            fieldset(class=`flex-wrap d-inline-flex ${(caption||data[0]) ? "border" : ""} mt-3 pt-1 align-self-start`)
                 legend.header.text-primary.mt-n4.position-absolute=caption?caption:data[0]
-                fieldset(class=`flex-wrap d-inline-flex ${(caption||data[0]) ? "border" : ""} mt-3 pt-1 pb-1 ms-4 align-self-start`)
+                fieldset(class=`flex-wrap d-inline-flex ${(caption||data[0]) ? "border" : ""} mt-3 pt-1 ms-3 me-3 align-self-start`)
                     each stat,idx in stats.filter(stat=>isValue(stat[1]))
                         +renderfield(stat[1],stat[0],{...options,"path":options.path+"/"+stat[0],"parent":data[1]})
-                if !caption && !data[0]
-                    div.d-block(style="width:100%;")
                 each stat,idx in stats.filter(stat=>isObject(stat[1]))
                     +jsonator(stat,undefined,{...options,"path":options.path+"/"+stat[0],"parent":data[1]})
         else
-            div.container-fluid(style="padding-top: 5px;")
+            fieldset.container-fluid(style="padding-top: 5px;")
                 div.d-flex
                     each stat,idx in stats.filter(stat=>isValue(stat[1]))
-                        +jsonator(stat,stat[0],{...options,"path":options.path+"/"+stat[0]})
+                        +jsonator(stat,stat[0],{...options,"path":options.path+"/"+stat[0],"parent":data[1]})
                 div.tabs(style="padding-top: 5px;")
                     ul(class="nav nav-tabs" role="tablist")
                         each stat,idx in stats.filter(stat=>isObject(stat[1]))
@@ -85,4 +85,4 @@ mixin jsonator(data,caption,options)
                                 id="tab-content-"+stat[2] 
                                 role="tabpanel"
                                 aria-labelledby="tab-"+stat[2])
-                                +jsonator(stat,undefined,{...options,"path":options.path+"/"+stat[0]})
+                                +jsonator(stat,undefined,{...options,"path":options.path+"/"+stat[0],"parent":data[1]})

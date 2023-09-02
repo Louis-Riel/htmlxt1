@@ -17,6 +17,7 @@ html, body {
   color: aqua !important;
   background-color: transparent !important;
   opacity: 80% !important;
+  border: none !important;
 }
 
 .nav-link.active {

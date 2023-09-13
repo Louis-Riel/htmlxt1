@@ -2,8 +2,8 @@ include ../../controls/jsonator/index
 - var tiled = true;
 +jsonator([undefined,data],undefined,{"editable": false,
                                       "path":"/status",
-                                      "tiled": statusTiled,
-                                      "expand": true,
+                                      "tiled": true,
+                                      "skipfields":["name"],
                                       "mutations" : [
                                         {
                                             "endswith": "/commands",

@@ -128,7 +128,7 @@ export default function WSProxy(server:http.Server) {
                         const childObj = matches[3] === undefined ? obj[matches[1]] : obj[matches[1]][idx];
                         setObectValue(childObj,matches.splice(4),value);
                     } else {
-                        const val = matches[matches.length-1] === undefined ? value : {value,version:parseInt(matches[3]??"0")}
+                        const val = matches[matches.length-1] === undefined ? value : { value:/^[0-9.-]/.test(value) ? Number(value) : value,version:parseInt(matches[3]??0)}
                         if (matches[3] === undefined) {
                             obj[matches[1]] = val
                         } else {

@@ -106,7 +106,7 @@ function espRequest(roptions: RequestOptions,body:Buffer|undefined): Promise<Loc
                 res.on("end", () => {
                     if (res.statusCode === 200) { 
                         try {
-                            console.log(roptions.method,roptions.path)
+                            console.log(roptions.method,roptions.path,requestCache.size)
                             requestCache.set(cacheKey,[Date.now(),JSON.parse(data.toString())]);
                             resolve(requestCache.get(cacheKey)?.[1] ?? {});
                         } catch (ex) {

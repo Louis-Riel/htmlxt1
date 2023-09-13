@@ -57,38 +57,40 @@ function get(res: Request) {
    }
 
    function ManageContentType(page:TemplatedPage):Promise<TemplatedPage>{
-      return new Promise((resolve,reject) => {
-         const enc = res.req.headers["Accept-Encoding"];
+      const enc = res.req.headers["accept-encoding"];
+      if (enc) {
          const encs = typeof enc === 'string' ? [enc] : enc ?? [];
-         if (encs.some(/\bdeflate\b/.test)) {
-            Deflate(reject, resolve);
-         } else if (encs.some(/\bgzip\b/.test)) {
-            Gzip(reject, resolve);
-         } else {
-            resolve(page);
+         if (encs.some(enc=>/\bgzip\b/.test(enc))) {
+            return Gzip(page);
+         } else if (encs.some(enc=>/\bdeflate\b/.test(enc))) {
+            return Deflate(page);
          }
-      });
+      }
 
-      function Gzip(reject: (reason?: any) => void, resolve: (value: TemplatedPage | PromiseLike<TemplatedPage>) => void) {
-         gzip(page.page, function (err, buffer) {
+      return Promise.resolve(page);
+
+      function Gzip(page:TemplatedPage):Promise<TemplatedPage> {
+         return new Promise((resolve,reject) => {
+            gzip(page.page, function (err, buffer) {
             if (err) {
                reject(err);
             } else {
                res.setHeader('Content-Encoding', 'gzip');
                resolve({ page: buffer, headers: page.headers });
             }
-         });
+         })})
       }
 
-      function Deflate(reject: (reason?: any) => void, resolve: (value: TemplatedPage | PromiseLike<TemplatedPage>) => void) {
-         deflate(page.page, (err, buffer) => {
-            if (err) {
-               reject(err);
-            } else {
-               res.setHeader('Content-Encoding', 'deflate');
-               resolve({ page: buffer, headers: page.headers });
-            }
-         });
+      function Deflate(page:TemplatedPage):Promise<TemplatedPage> {
+         return new Promise((resolve,reject) => {
+            deflate(page.page, (err, buffer) => {
+               if (err) {
+                  reject(err);
+               } else {
+                  res.setHeader('Content-Encoding', 'deflate');
+                  resolve({ page: buffer, headers: page.headers });
+               }
+         })})
       }
    }
 }

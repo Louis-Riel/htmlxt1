@@ -1,4 +1,4 @@
 include ../../controls/jsonator/index
 form(ws-send="Config" name="Config") 
     button(type="submit" class="btn btn-outline-primary")="Save"
-    +jsonator(["Config",config],"Config",{"editable": true,"path":"/config", "expand": true})
+    +jsonator(["Config",config],"Config",{"editable": true,"path":"/config","tiled": false})

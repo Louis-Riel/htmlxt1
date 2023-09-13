@@ -1,22 +1,43 @@
 include ./mutators/mutators
 mixin renderfield(value,caption,options)
-    - const isVersioned = (val)=>(typeof val === "object") && (val.value !== undefined) && (val.version !== undefined)
-    - var versioned=isVersioned(value)
-    if options.editable
-        div.d-flex
-            if caption
-                span(class="input-group-text")=caption
-            input(type="text"
-                style=options.expand ? 'width: 100%;' : 'width: auto;'
-                readonly=!options.editable
-                name=options.path + (versioned?`(${value.version})`:"")
-                class=options.plaintext ? "form-control-plaintext" : "form-control"
-                value=versioned?value.value:value)
-    else
-        div.d-flex.flex-column.align-items-center(class=caption?"grated":"")
-            if caption
-                span.text-secondary=caption
-            span.text-primary(name=options.path + (versioned?`(${value.version})`:""))=versioned?value.value:value            
+    -
+        function getType(name,val) {
+            if (/[a-z]+(_us|_sec)/.test(name))
+                return "datetime-local"
+            
+            if (val && /^[0-9.-]+$/.test(val) && [".","-"].every(i=>val.toString().indexOf(i) === val.toString().lastIndexOf(i)))
+                return "number"
+            
+            return "text";
+        }
+    -
+        function getValue(name,val) {
+            const tp = getType(name,val);
+            if (tp === "number")
+                return Math.round((Number(val) + Number.EPSILON) * 1000) / 1000
+
+            if (tp.includes("time"))
+                return (name.endsWith("_us")?new Date(Number(val)/1000):new Date(Number(val)*1000)).toLocaleTimeString()
+            
+            return val
+        }
+    if (!options.skipfields || !options.skipfields.includes(caption))
+        - const isVersioned = (val)=>(typeof val === "object") && (val.value !== undefined) && (val.version !== undefined)
+        - var versioned=isVersioned(value)
+        if options.editable
+            div.d-flex.flex-row.flex-nowrap
+                if caption
+                    span(class="input-group-text")=caption
+                input(type=getType(caption, versioned?value.value:value)
+                    readonly=!options.editable
+                    name=options.path + (versioned?`(${value.version})`:"")
+                    class=options.plaintext ? "form-control-plaintext" : "form-control"
+                    value=getValue(caption, versioned?value.value:value))
+        else
+            div.d-flex.flex-column.align-items-center(class=caption?"grated":"")
+                if caption
+                    span.text-secondary=caption
+                span.text-primary(name=options.path + (versioned?`(${value.version})`:""))=getValue(caption, versioned?value.value:value)          
 
 mixin renderarray(data,options)
     - const columns=data[1].reduce((cols,cur)=>cols.concat(Object.keys(cur).filter(col=>!cols.includes(col))),[])
@@ -54,23 +75,23 @@ mixin jsonator(data,caption,options)
         +renderarray(data,options)
     else
         - var stats = Object.entries(data[1]).map(entry=>[...entry,uuid()])
-        if (options.tiled)
+        if (options.tiled && stats.length)
             fieldset(class=`d-flex flex-column flex-wrap ${(caption||data[0]) ? "border" : ""} mt-3 pt-1 align-self-start`)
                 legend.header.text-primary.mt-n4.position-absolute=caption?caption:data[0]
-                fieldset(class=`d-flex flex-row ${(caption||data[0]) ? "border" : ""} mt-3 pt-1 ms-3 me-3 align-self-start`)
-                    each stat,idx in stats.filter(stat=>isValue(stat[1]))
+                fieldset(class=`d-flex flex-row flex-wrap ${(caption||data[0]) ? "border" : ""} mt-3 pt-1 ms-3 me-3 align-self-start`)
+                    each stat,idx in stats.filter(stat=>isValue(stat[1])).sort((a,b)=>a[0].localeCompare(b[0]))
                         +renderfield(stat[1],stat[0],{...options,"path":options.path+"/"+stat[0],"parent":data[1]})
-                fieldset(class=`d-flex flex-row ${(caption||data[0]) ? "border" : ""} mt-3 pt-1 ms-3 me-3 align-self-start`)
-                    each stat,idx in stats.filter(stat=>isObject(stat[1]))
+                fieldset(class=`d-flex flex-row flex-wrap ${(caption||data[0]) ? "border" : ""} mt-3 pt-1 ms-3 me-3 align-self-start`)
+                    each stat,idx in stats.filter(stat=>isObject(stat[1])).sort((a,b)=>a[0].localeCompare(b[0]))
                         +jsonator(stat,undefined,{...options,"path":options.path+"/"+stat[0],"parent":data[1]})
         else
             fieldset.container-fluid(style="padding-top: 5px;")
                 div.d-flex
-                    each stat,idx in stats.filter(stat=>isValue(stat[1]))
+                    each stat,idx in stats.filter(stat=>isValue(stat[1])).sort((a,b)=>a[0].localeCompare(b[0]))
                         +jsonator(stat,stat[0],{...options,"path":options.path+"/"+stat[0],"parent":data[1]})
                 div.tabs(style="padding-top: 5px;")
                     ul(class="nav nav-tabs" role="tablist")
-                        each stat,idx in stats.filter(stat=>isObject(stat[1]))
+                        each stat,idx in stats.filter(stat=>isObject(stat[1])).sort((a,b)=>a[0].localeCompare(b[0]))
                             li.nav-item(role="presentation")
                                 button(class=`nav-link ${idx===0?"active":""}`
                                     data-bs-toggle="tab" 

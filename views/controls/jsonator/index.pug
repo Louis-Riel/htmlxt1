@@ -52,6 +52,9 @@ mixin renderarray(data,options)
             }
             const tbody = th.parentNode.parentNode.parentElement.querySelector("tbody");
             th.sorted = !th.sorted;
+            Array.from(document.querySelector("#tab-content-Tasks > div > table > thead > tr > th:nth-child(2)").parentNode.children).forEach(th=>th.innerText=th.innerText.replaceAll(/[⤒⤓]/g,""))
+            th.innerText += (th.sorted ? " ⤓" : " ⤒");
+
             Array.from(tbody.childNodes)
                  .sort((a,b)=>compareValue(a.children[idx].innerText,b.children[idx].innerText) * (th.sorted ? 1 : -1))
                  .forEach(row=>tbody.appendChild(row))
